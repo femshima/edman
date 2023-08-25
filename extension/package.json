@@ -1,0 +1,19 @@
+{
+  "name": "edman-extension",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "rollup -c",
+    "types": "cargo run --bin ce-adapter-ts-binding -- ./src/generated/ce-adapter.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^11.1.2",
+    "@types/chrome": "^0.0.243",
+    "rollup": "^3.28.1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.1.6"
+  }
+}

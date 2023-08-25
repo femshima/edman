@@ -1,0 +1,13 @@
+{
+  "description": "Native messaging example add-on",
+  "manifest_version": 3,
+  "name": "Native messaging example",
+  "version": "0.0.44",
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "permissions": [
+    "nativeMessaging",
+    "downloads"
+  ]
+}
