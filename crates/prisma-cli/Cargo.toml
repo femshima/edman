@@ -1,0 +1,15 @@
+[package]
+name = "prisma-cli"
+edition = "2021"
+
+version.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+prisma-client-rust.workspace = true
+prisma-client-rust-cli.workspace = true
