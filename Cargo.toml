@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/*"
+]
+
+[workspace.package]
+version = "0.1.0"
+description = ""
+license = "MIT"
+repository = "https://github.com/femshima/edman"
+keywords = [""]
+categories = [""]
+
+rust-version = "1.65.0"
+
+[workspace.dependencies]
+tonic = "0.9.2"
+tokio = { version = "1.0", features = ["rt-multi-thread", "macros"] }
+prost = "0.11"
+
+prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.9", features = ["sqlite", "migrations"] }
+prisma-client-rust-cli = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.9", features = ["sqlite", "migrations"] }

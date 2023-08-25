@@ -1,0 +1,5 @@
+/target
+/crates/prisma/src/generated.rs
+/extension/node_modules
+/extension/dist
+/dev.db*
