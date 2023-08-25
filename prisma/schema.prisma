@@ -1,0 +1,17 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:../dev.db"
+}
+
+generator client {
+  provider    = "cargo prisma"
+  output      = env("PRISMA_OUT_FILE")
+  module_path = "::prisma"
+}
+
+model File {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  key       String
+  path      String
+}
