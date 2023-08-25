@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package chrome_extension;
+
+// ChromeExtension < - > edman-ce-adapter < - > edman-main
+service DownloadManager {
+  rpc GetConfig (ConfigRequest) returns (ConfigReply) {}
+  rpc RegisterFile (RegisterFileRequest) returns (RegisterFileReply) {}
+  rpc GetFileStates (GetFileStatesRequest) returns (GetFileStatesReply) {}
+}
+
+message ConfigRequest {}
+
+message ConfigReply {
+  string download_directory = 1;
+  string download_subdirectory = 2;
+  string save_file_directory = 3;
+}
+
+message RegisterFileRequest{
+  string path = 1;
+  string key = 2;
+}
+message RegisterFileReply{
+  int32 id = 1;
+}
+
+message GetFileStatesRequest{
+  repeated string keys = 1;
+}
+message GetFileStatesReply{
+  repeated bool result = 1;
+}
