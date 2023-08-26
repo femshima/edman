@@ -16,7 +16,7 @@ struct Cli {
     uninstall: Option<InstallOptions>,
 
     #[arg(group = "input")]
-    origin: Option<String>,
+    browser_arguments: Vec<String>,
 }
 
 pub mod chrome_extension {
@@ -45,6 +45,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(options) = cli.install {
         installer::install(options, config)?;
     } else {
+        if !cli.browser_arguments.is_empty() {
+            assert!(
+                config.allowed_origins.contains(&cli.browser_arguments[0]),
+                "Origin \"{}\" is not allowed!",
+                &cli.browser_arguments[0]
+            );
+        }
+
         let stdin = std::io::stdin().lock();
         let stdout = std::io::stdout().lock();
 
