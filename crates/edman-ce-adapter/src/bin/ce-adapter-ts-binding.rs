@@ -1,8 +1,9 @@
 use std::io::Write;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let generated = include_str!(concat!(env!("OUT_DIR"), "/generated.ts"));
-    let function = r#"
+    let ts = concat!(
+        include_str!(concat!(env!("OUT_DIR"), "/generated.ts")),
+        r#"
 type NativeTypes = NativeMessage['type'];
 type INativeMessage<T extends NativeTypes> = NativeMessage & { type: T };
 type INativeResult<T extends NativeTypes> = NativeResult & { type: T };
@@ -17,9 +18,8 @@ export async function sendNativeMessage<T extends NativeTypes>(type: T, data: IN
     }
 }
 
-"#;
-
-    let ts = format!("{}{}", generated, function);
+"#
+    );
 
     let file = std::env::args().skip(1).next().unwrap();
     std::fs::File::create(file)?.write_all(ts.as_bytes())?;

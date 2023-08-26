@@ -17,12 +17,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .out_dir(&out_dir)
         .compile(&["chrome_extension.proto"], &["proto"])?;
 
-    let mut typescript = typeshare_core::language::TypeScript::default();
-    let parsed_data = parse_files(&[
-        Path::new("src/main.rs"),
-        &out_dir.join("chrome_extension.rs"),
-    ]);
+    let source_files = glob::glob("src/**/*.rs")?;
+    let out_files = glob::glob(out_dir.join("**/*.rs").to_str().unwrap())?;
+    let file_paths: Vec<PathBuf> = source_files
+        .chain(out_files)
+        .filter_map(Result::ok)
+        .collect();
+    let parsed_data = parse_files(&file_paths);
+
     let mut type_file = std::fs::File::create(out_dir.join("generated.ts"))?;
+    let mut typescript = typeshare_core::language::TypeScript::default();
     typescript.generate_types(&mut type_file, &parsed_data)?;
 
     println!("cargo:rerun-if-changed=build.rs");
