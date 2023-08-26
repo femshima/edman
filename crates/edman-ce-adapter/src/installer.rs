@@ -31,7 +31,7 @@ impl Default for AppManifest {
         Self {
             name: "edman",
             description: "Manages files",
-            messaging_type: "stdin",
+            messaging_type: "stdio",
             path: PathBuf::new(),
             allowed_origins: None,
             allowed_extensions: None,
@@ -99,10 +99,10 @@ fn get_link_path(option: &InstallOptions) -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(target="macos")] {
             let path = match option {
-                InstallOptions::Chrome => "/Library/Application Support/Chrome/NativeMessagingHosts",
-                InstallOptions::Chromium => "/Library/Application Support/Chromium/NativeMessagingHosts",
-                InstallOptions::Vivaldi => "/Library/Application Support/Vivaldi/NativeMessagingHosts",
-                InstallOptions::Firefox => "/Library/Application Support/Mozilla/NativeMessagingHosts",
+                InstallOptions::Chrome => "Library/Application Support/Chrome/NativeMessagingHosts",
+                InstallOptions::Chromium => "Library/Application Support/Chromium/NativeMessagingHosts",
+                InstallOptions::Vivaldi => "Library/Application Support/Vivaldi/NativeMessagingHosts",
+                InstallOptions::Firefox => "Library/Application Support/Mozilla/NativeMessagingHosts",
             };
         } else {
             let path = match option {
