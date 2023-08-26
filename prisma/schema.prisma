@@ -15,3 +15,12 @@ model File {
   key       String
   path      String
 }
+
+model Config {
+  id                    Int    @id
+  download_directory    String
+  download_subdirectory String
+  save_file_directory   String
+  allowed_extensions    String
+  allowed_origins       String
+}

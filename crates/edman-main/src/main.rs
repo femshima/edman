@@ -1,15 +1,16 @@
 use std::collections::{hash_map::RandomState, HashSet};
 
+use config::ConfigurationInterface;
 use prisma_codegen::PrismaClient;
 
 use ce_adapter::download_manager_server::{DownloadManager, DownloadManagerServer};
 use tonic::{transport::Server, Request, Response, Status};
 
+mod config;
+
 pub mod ce_adapter {
+    #![allow(non_snake_case)]
     tonic::include_proto!("chrome_extension");
-}
-pub mod config {
-    tonic::include_proto!("config");
 }
 
 fn error_prisma_to_tonic(err: prisma_client_rust::QueryError) -> Status {
@@ -38,27 +39,12 @@ impl DownloadManager for ChromeExtensionInterface {
         &self,
         _request: Request<ce_adapter::ConfigRequest>,
     ) -> Result<Response<ce_adapter::ConfigReply>, Status> {
-        let current_dir = std::env::current_dir()
-            .map_err(|_err| Status::unavailable("Could not retrieve current dir"))?;
-        let user_dirs = directories::UserDirs::new();
+        let config = config::Config::ensure_db(&self.prisma_client)
+            .await
+            .map_err(error_prisma_to_tonic)?;
 
-        let reply = config::Config {
-            download_directory: user_dirs
-                .as_ref()
-                .and_then(|user_dirs| user_dirs.download_dir())
-                .and_then(|download_dir| download_dir.to_str())
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| todo!()),
-            download_subdirectory: "edman".to_string(),
-            save_file_directory: current_dir
-                .to_str()
-                .map(|s| s.to_string())
-                .unwrap_or_else(|| todo!()),
-            allowed_extensions: vec![],
-            allowed_origins: vec![],
-        };
         Ok(Response::new(ce_adapter::ConfigReply {
-            config: Some(reply),
+            config: Some(*config),
         }))
     }
     async fn get_file_states(
