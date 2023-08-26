@@ -3,14 +3,11 @@ use std::{
     path::PathBuf,
 };
 
+use crate::chrome_extension;
+use crate::chrome_extension::download_manager_client::DownloadManagerClient;
+use crate::config;
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
-use chrome_extension::download_manager_client::DownloadManagerClient;
 use serde::{Deserialize, Serialize};
-
-pub mod chrome_extension {
-    #![allow(non_snake_case)]
-    tonic::include_proto!("chrome_extension");
-}
 
 #[typeshare::typeshare]
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -38,22 +35,17 @@ enum NativeResult {
 }
 
 pub async fn main_loop(
+    client: &mut DownloadManagerClient<tonic::transport::Channel>,
+    config: &config::Config,
     mut stdin: impl Read,
     mut stdout: impl Write,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut client = DownloadManagerClient::connect("http://[::1]:50051").await?;
-
-    let config_response = client
-        .get_config(tonic::Request::new(chrome_extension::ConfigRequest {}))
-        .await?;
-    let config = config_response.get_ref();
-
     while let Ok(size) = stdin.read_u32::<NativeEndian>() {
         let mut input_buf = vec![0u8; size as usize];
         stdin.read_exact(&mut input_buf)?;
         let input_str = String::from_utf8(input_buf)?;
 
-        let native_result = get_reply(&mut client, config, &input_str)
+        let native_result = get_reply(client, config, &input_str)
             .await
             .unwrap_or_else(|err| NativeResult::Err(err.to_string()));
         let output_str = serde_json::to_string(&native_result)?;
@@ -68,7 +60,7 @@ pub async fn main_loop(
 
 async fn get_reply(
     client: &mut DownloadManagerClient<tonic::transport::Channel>,
-    config: &chrome_extension::ConfigReply,
+    config: &config::Config,
     input_str: &str,
 ) -> Result<NativeResult, Box<dyn std::error::Error>> {
     let native_message: NativeMessage = serde_json::from_str(&input_str)?;
@@ -117,12 +109,10 @@ async fn get_reply(
 
 #[cfg(test)]
 mod tests {
-    use crate::native_messaging::{
-        chrome_extension::{
-            self, download_manager_client::DownloadManagerClient, GetFileStatesReply,
-        },
-        get_reply, NativeMessage, NativeResult,
+    use crate::chrome_extension::{
+        self, download_manager_client::DownloadManagerClient, GetFileStatesReply,
     };
+    use crate::native_messaging::{get_reply, NativeMessage, NativeResult};
 
     #[tokio::test]
     async fn test_file_states() -> Result<(), Box<dyn std::error::Error>> {
@@ -135,7 +125,7 @@ mod tests {
             .await?;
         let config = config_response.get_ref();
 
-        let reply = get_reply(&mut client, config, input_str).await?;
+        let reply = get_reply(&mut client, config.config.as_ref().unwrap(), input_str).await?;
 
         assert_eq!(
             reply,

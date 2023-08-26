@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .protoc_arg(std::fs::canonicalize("../../proto/")?.to_str().unwrap())
         .protoc_arg("--experimental_allow_proto3_optional")
         .out_dir(&out_dir)
-        .compile(&["chrome_extension.proto"], &["proto"])?;
+        .compile(&["chrome_extension.proto", "config.proto"], &["proto"])?;
 
     let source_files = glob::glob("src/**/*.rs")?;
     let out_files = glob::glob(out_dir.join("**/*.rs").to_str().unwrap())?;

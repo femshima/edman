@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package config;
+
+message Config {
+  string download_directory = 1;
+  string download_subdirectory = 2;
+  string save_file_directory = 3;
+
+  repeated string allowed_origins = 4;
+  repeated string allowed_extensions = 5;
+}

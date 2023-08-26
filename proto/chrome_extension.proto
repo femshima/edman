@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package chrome_extension;
 
+import "config.proto";
+
 // ChromeExtension < - > edman-ce-adapter < - > edman-main
 service DownloadManager {
   rpc GetConfig (ConfigRequest) returns (ConfigReply) {}
@@ -12,9 +14,7 @@ service DownloadManager {
 message ConfigRequest {}
 
 message ConfigReply {
-  string download_directory = 1;
-  string download_subdirectory = 2;
-  string save_file_directory = 3;
+  config.Config config = 1;
 }
 
 message RegisterFileRequest{
