@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
+const EDMAN_UNIQUE_NAME: &str = "edman";
+
 #[derive(Clone, ValueEnum)]
 pub enum InstallOptions {
     Chrome,
@@ -29,7 +31,7 @@ struct AppManifest {
 impl Default for AppManifest {
     fn default() -> Self {
         Self {
-            name: "edman",
+            name: EDMAN_UNIQUE_NAME,
             description: "Manages files",
             messaging_type: "stdio",
             path: PathBuf::new(),
@@ -67,7 +69,9 @@ pub fn install(
 
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
-            todo!("Windowsのことなんて知らないっ！");
+            let parent_key = get_registry(&option)?;
+            let (key, _) = parent_key.create_subkey(EDMAN_UNIQUE_NAME)?;
+            key.set_value("", manifest_path.to_str().as_ref().unwrap())?;
         } else if #[cfg(unix)] {
             let link_path = get_link_path(&option);
             std::os::unix::fs::symlink(manifest_path, link_path)?;
@@ -82,7 +86,8 @@ pub fn install(
 pub fn uninstall(option: InstallOptions) -> Result<(), Box<dyn std::error::Error>> {
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
-            todo!("Windowsのことなんて知らないっ！");
+            let parent_key = get_registry(&option)?;
+            parent_key.delete_subkey(EDMAN_UNIQUE_NAME)?;
         } else if #[cfg(unix)] {
             let link_path = get_link_path(&option);
             std::fs::remove_file(link_path)?;
@@ -118,5 +123,25 @@ fn get_link_path(option: &InstallOptions) -> PathBuf {
         .map(|user_dir| user_dir.home_dir().to_owned())
         .expect("Could not retrieve home directory.");
 
-    user_dir.join(path).join("edman.json")
+    user_dir
+        .join(path)
+        .join(format!("{}.json"), EDMAN_UNIQUE_NAME)
+}
+
+#[cfg(windows)]
+fn get_registry(option: &InstallOptions) -> std::io::Result<winreg::RegKey> {
+    use winreg::enums::*;
+    use winreg::RegKey;
+
+    let path = match option {
+        InstallOptions::Chrome => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
+        InstallOptions::Chromium => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
+        InstallOptions::Vivaldi => r"SOFTWARE\Vivaldi\NativeMessagingHosts",
+        InstallOptions::Firefox => r"SOFTWARE\Mozilla\NativeMessagingHosts",
+    };
+
+    let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+    let (key, _) = hkcu.create_subkey(path)?;
+
+    Ok(key)
 }
