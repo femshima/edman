@@ -125,7 +125,7 @@ fn get_link_path(option: &InstallOptions) -> PathBuf {
 
     user_dir
         .join(path)
-        .join(format!("{}.json"), EDMAN_UNIQUE_NAME)
+        .join(format!("{}.json", EDMAN_UNIQUE_NAME))
 }
 
 #[cfg(windows)]
