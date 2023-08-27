@@ -9,28 +9,51 @@ use crate::config;
 use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+struct NativeMessage {
+    id: Option<String>,
+
+    #[serde(flatten)]
+    message: NativeMessageKinds,
+}
+
 #[typeshare::typeshare]
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(tag = "type", content = "data", rename_all = "snake_case")]
-enum NativeMessage {
+enum NativeMessageKinds {
+    Config,
+    #[serde(rename_all = "camelCase")]
+    FetchFileStates {
+        query: Vec<String>,
+    },
     #[serde(rename_all = "camelCase")]
     RegisterFile {
         download_path: String,
         save_path: Vec<String>,
         key: String,
     },
-    #[serde(rename_all = "camelCase")]
-    FetchFileStates { query: Vec<String> },
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+struct NativeResult {
+    id: Option<String>,
+
+    #[serde(flatten)]
+    message: NativeResultKinds,
 }
 
 #[typeshare::typeshare]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(tag = "type", content = "data", rename_all = "snake_case")]
-enum NativeResult {
+enum NativeResultKinds {
     #[serde(rename_all = "camelCase")]
-    RegisterFile(chrome_extension::RegisterFileReply),
+    Config {
+        download_subdirectory: String,
+    },
     #[serde(rename_all = "camelCase")]
     FetchFileStates(chrome_extension::GetFileStatesReply),
+    #[serde(rename_all = "camelCase")]
+    RegisterFile(chrome_extension::RegisterFileReply),
     Err(String),
 }
 
@@ -45,9 +68,17 @@ pub async fn main_loop(
         stdin.read_exact(&mut input_buf)?;
         let input_str = String::from_utf8(input_buf)?;
 
-        let native_result = get_reply(client, config, &input_str)
+        let NativeMessage { id, message } = serde_json::from_str(&input_str)?;
+
+        let reply_message = get_reply(client, config, message)
             .await
-            .unwrap_or_else(|err| NativeResult::Err(err.to_string()));
+            .unwrap_or_else(|err| NativeResultKinds::Err(err.to_string()));
+
+        let native_result = NativeResult {
+            id,
+            message: reply_message,
+        };
+
         let output_str = serde_json::to_string(&native_result)?;
 
         stdout.write_u32::<NativeEndian>(output_str.len() as u32)?;
@@ -61,17 +92,18 @@ pub async fn main_loop(
 async fn get_reply(
     client: &mut DownloadManagerClient<tonic::transport::Channel>,
     config: &config::Config,
-    input_str: &str,
-) -> Result<NativeResult, Box<dyn std::error::Error>> {
-    let native_message: NativeMessage = serde_json::from_str(&input_str)?;
-
-    let output_str = match native_message {
-        NativeMessage::FetchFileStates { query } => {
+    native_message: NativeMessageKinds,
+) -> Result<NativeResultKinds, Box<dyn std::error::Error>> {
+    let reply_message = match native_message {
+        NativeMessageKinds::Config => NativeResultKinds::Config {
+            download_subdirectory: config.download_subdirectory.to_owned(),
+        },
+        NativeMessageKinds::FetchFileStates { query } => {
             let request = chrome_extension::GetFileStatesRequest { keys: query };
             let response = client.get_file_states(tonic::Request::new(request)).await?;
-            NativeResult::FetchFileStates(response.get_ref().to_owned())
+            NativeResultKinds::FetchFileStates(response.get_ref().to_owned())
         }
-        NativeMessage::RegisterFile {
+        NativeMessageKinds::RegisterFile {
             download_path,
             save_path,
             key,
@@ -100,11 +132,11 @@ async fn get_reply(
                 key,
             };
             let response = client.register_file(tonic::Request::new(request)).await?;
-            NativeResult::RegisterFile(response.get_ref().to_owned())
+            NativeResultKinds::RegisterFile(response.get_ref().to_owned())
         }
     };
 
-    Ok(output_str)
+    Ok(reply_message)
 }
 
 #[cfg(test)]
@@ -112,7 +144,7 @@ mod tests {
     use crate::chrome_extension::{
         self, download_manager_client::DownloadManagerClient, GetFileStatesReply,
     };
-    use crate::native_messaging::{get_reply, NativeMessage, NativeResult};
+    use crate::native_messaging::{get_reply, NativeMessageKinds, NativeResultKinds};
 
     #[tokio::test]
     async fn test_file_states() -> Result<(), Box<dyn std::error::Error>> {
@@ -124,12 +156,13 @@ mod tests {
             .get_config(tonic::Request::new(chrome_extension::ConfigRequest {}))
             .await?;
         let config = config_response.get_ref();
+        let native_message: NativeMessageKinds = serde_json::from_str(&input_str)?;
 
-        let reply = get_reply(&mut client, config.config.as_ref().unwrap(), input_str).await?;
+        let reply = get_reply(&mut client, config.config.as_ref().unwrap(), native_message).await?;
 
         assert_eq!(
             reply,
-            NativeResult::FetchFileStates(GetFileStatesReply { result: vec![] })
+            NativeResultKinds::FetchFileStates(GetFileStatesReply { result: vec![] })
         );
 
         Ok(())
@@ -138,11 +171,11 @@ mod tests {
     #[test]
     fn parse_register() {
         let input_str = "{\"type\":\"register_file\",\"data\":{\"downloadPath\":\"a\",\"savePath\":[\"b\",\"d\"],\"key\":\"c\"}}";
-        let parsed: NativeMessage = serde_json::from_str(input_str).unwrap();
+        let parsed: NativeMessageKinds = serde_json::from_str(input_str).unwrap();
 
         assert_eq!(
             parsed,
-            NativeMessage::RegisterFile {
+            NativeMessageKinds::RegisterFile {
                 download_path: "a".to_string(),
                 save_path: vec!["b".to_string(), "d".to_string()],
                 key: "c".to_string()

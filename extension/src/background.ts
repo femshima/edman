@@ -1,4 +1,4 @@
-import { sendNativeMessage } from "./generated/ce-adapter";
+import { native } from "./native";
 import { registerOnMessage } from "./Messaging";
 
 interface RegisterFileMessage {
@@ -11,7 +11,9 @@ const initiatedDownloads: Map<number, RegisterFileMessage> = new Map();
 registerOnMessage(async ({ type, data, callback }) => {
   switch (type) {
     case "download": {
-      const downloadPath = `edman/${Date.now()}-${data.key.replace(/[./\/]/, "")}`;
+      const config = await native.sendNativeMessage("config", undefined);
+
+      const downloadPath = `${config.data.downloadSubdirectory}/${Date.now()}-${data.key.replace(/[./\/]/, "")}`;
       const id = await chrome.downloads.download({
         url: data.url,
         filename: downloadPath,
@@ -25,8 +27,8 @@ registerOnMessage(async ({ type, data, callback }) => {
       break;
     }
     case "file_states": {
-      const res = await sendNativeMessage("fetch_file_states", {
-        query: data.keys
+      const res = await native.sendNativeMessage("fetch_file_states", {
+        query: data.keys,
       });
       callback({
         result: res.data.result
@@ -42,10 +44,10 @@ chrome.downloads.onChanged.addListener(async (delta) => {
     const message = initiatedDownloads.get(id);
     if (!message) return;
 
-    await sendNativeMessage("register_file", message);
+    await native.sendNativeMessage("register_file", message);
     await chrome.downloads.erase({
       id
     });
     initiatedDownloads.delete(id);
   }
-})
+});
