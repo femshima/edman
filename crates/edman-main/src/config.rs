@@ -44,11 +44,13 @@ async fn db_read(client: &PrismaClient) -> Result<Option<Config>, QueryError> {
         allowed_origins: config
             .allowed_origins
             .split("\n")
+            .filter(|s| !s.is_empty())
             .map(ToOwned::to_owned)
             .collect(),
         allowed_extensions: config
             .allowed_extensions
             .split("\n")
+            .filter(|s| !s.is_empty())
             .map(ToOwned::to_owned)
             .collect(),
     }))
