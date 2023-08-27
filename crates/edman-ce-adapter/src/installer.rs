@@ -4,8 +4,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::config;
-
-const EDMAN_UNIQUE_NAME: &str = "edman";
+use edman_ce_adapter::EDMAN_UNIQUE_NAME;
 
 #[derive(Clone, ValueEnum)]
 pub enum InstallOptions {

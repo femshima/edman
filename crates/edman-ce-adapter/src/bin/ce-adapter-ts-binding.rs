@@ -1,14 +1,14 @@
 use std::io::Write;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let ts = concat!(
+    let generated_ts = concat!(
         include_str!(concat!(env!("OUT_DIR"), "/generated.ts")),
         r#"
 type NativeTypes = NativeMessage['type'];
 type INativeMessage<T extends NativeTypes> = NativeMessage & { type: T };
 type INativeResult<T extends NativeTypes> = NativeResult & { type: T };
 export async function sendNativeMessage<T extends NativeTypes>(type: T, data: INativeMessage<T>["data"]): Promise<INativeResult<T>> {
-    const result = await chrome.runtime.sendNativeMessage("edman", { type, data }) as NativeResult;
+    const result = await chrome.runtime.sendNativeMessage(EDMAN_UNIQUE_NAME, { type, data }) as NativeResult;
     if (result.type === type) {
     return result as NativeResult & { type: T };
     } else if (result.type === 'err') {
@@ -19,6 +19,12 @@ export async function sendNativeMessage<T extends NativeTypes>(type: T, data: IN
 }
 
 "#
+    );
+
+    let ts = format!(
+        "const EDMAN_UNIQUE_NAME = \"{}\";\n{}",
+        edman_ce_adapter::EDMAN_UNIQUE_NAME,
+        generated_ts
     );
 
     let file = std::env::args().skip(1).next().unwrap();
