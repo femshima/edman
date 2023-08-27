@@ -5,6 +5,8 @@ use typeshare_core::{language::Language, parser::ParsedData};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let out_dir = PathBuf::from(std::env::var("OUT_DIR")?);
 
+    let proto_dir = PathBuf::from("../../proto/");
+
     tonic_build::configure()
         .build_server(false)
         .message_attribute(".", "#[::typeshare::typeshare]")
@@ -12,10 +14,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .message_attribute(".", "#[derive(::serde::Serialize, ::serde::Deserialize)]")
         .enum_attribute(".", "#[derive(::serde::Serialize, ::serde::Deserialize)]")
         .protoc_arg("--proto_path")
-        .protoc_arg(std::fs::canonicalize("../../proto/")?.to_str().unwrap())
+        .protoc_arg(proto_dir.to_str().unwrap())
         .protoc_arg("--experimental_allow_proto3_optional")
         .out_dir(&out_dir)
-        .compile(&["chrome_extension.proto", "config.proto"], &["proto"])?;
+        .compile(
+            &[
+                proto_dir.join("chrome_extension.proto"),
+                proto_dir.join("config.proto"),
+            ],
+            &["proto"],
+        )?;
 
     let source_files = glob::glob("src/**/*.rs")?;
     let out_files = glob::glob(out_dir.join("**/*.rs").to_str().unwrap())?;
