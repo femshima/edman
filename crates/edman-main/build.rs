@@ -10,6 +10,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .protoc_arg("--experimental_allow_proto3_optional")
         .compile(
             &[
+                proto_dir.join("ui.proto"),
                 proto_dir.join("chrome_extension.proto"),
                 proto_dir.join("config.proto"),
             ],
