@@ -1,6 +1,6 @@
 use chrome_extension::download_manager_client::DownloadManagerClient;
 use clap::Parser;
-use installer::InstallOptions;
+use installer::BrowserKind;
 use native_messaging::main_loop;
 
 mod installer;
@@ -10,10 +10,10 @@ mod native_messaging;
 #[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(group = "input", long)]
-    install: Option<InstallOptions>,
+    install: Option<BrowserKind>,
 
     #[arg(group = "input", long)]
-    uninstall: Option<InstallOptions>,
+    uninstall: Option<BrowserKind>,
 
     #[arg(group = "input")]
     browser_arguments: Vec<String>,

@@ -4,14 +4,28 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::config;
-use edman_ce_adapter::EDMAN_UNIQUE_NAME;
 
-#[derive(Clone, ValueEnum)]
-pub enum InstallOptions {
+#[derive(Clone, Copy, ValueEnum)]
+pub enum BrowserKind {
     Chrome,
     Chromium,
     Vivaldi,
     Firefox,
+}
+
+#[derive(Clone, Copy)]
+enum BrowserStrain {
+    Chromium,
+    Firefox,
+}
+
+impl From<BrowserKind> for BrowserStrain {
+    fn from(value: BrowserKind) -> Self {
+        match value {
+            BrowserKind::Firefox => Self::Firefox,
+            _ => Self::Chromium,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
@@ -30,7 +44,7 @@ struct AppManifest {
 impl Default for AppManifest {
     fn default() -> Self {
         Self {
-            name: EDMAN_UNIQUE_NAME,
+            name: utils::EDMAN_UNIQUE_NAME,
             description: "Manages files",
             messaging_type: "stdio",
             path: PathBuf::new(),
@@ -41,18 +55,16 @@ impl Default for AppManifest {
 }
 
 pub fn install(
-    option: InstallOptions,
+    option: BrowserKind,
     config: &config::Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let manifest = match option {
-        InstallOptions::Chrome | InstallOptions::Chromium | InstallOptions::Vivaldi => {
-            AppManifest {
-                path: std::env::current_exe()?,
-                allowed_origins: Some(config.allowed_origins.to_owned()),
-                ..Default::default()
-            }
-        }
-        InstallOptions::Firefox => AppManifest {
+    let manifest = match option.into() {
+        BrowserStrain::Chromium => AppManifest {
+            path: std::env::current_exe()?,
+            allowed_origins: Some(config.allowed_origins.to_owned()),
+            ..Default::default()
+        },
+        BrowserStrain::Firefox => AppManifest {
             path: std::env::current_exe()?,
             allowed_extensions: Some(config.allowed_extensions.to_owned()),
             ..Default::default()
@@ -60,10 +72,11 @@ pub fn install(
     };
 
     let manifest_str = serde_json::to_string_pretty(&manifest)?;
-    let manifest_path = std::env::current_exe()?
-        .parent()
-        .expect("Could not generate manifest path")
-        .join("manifest.json");
+    let manifest_path = match option.into() {
+        BrowserStrain::Chromium => utils::manifest_path_chromium(),
+        BrowserStrain::Firefox => utils::manifest_path_firefox(),
+    };
+    utils::create_parent_dirs(&manifest_path)?;
     std::fs::File::create(&manifest_path)?.write_all(manifest_str.as_bytes())?;
 
     cfg_if::cfg_if! {
@@ -82,7 +95,7 @@ pub fn install(
     Ok(())
 }
 
-pub fn uninstall(option: InstallOptions) -> Result<(), Box<dyn std::error::Error>> {
+pub fn uninstall(option: BrowserKind) -> Result<(), Box<dyn std::error::Error>> {
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
             let parent_key = get_registry(&option)?;
@@ -99,21 +112,21 @@ pub fn uninstall(option: InstallOptions) -> Result<(), Box<dyn std::error::Error
 }
 
 #[cfg(unix)]
-fn get_link_path(option: &InstallOptions) -> PathBuf {
+fn get_link_path(option: &BrowserKind) -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(target="macos")] {
             let path = match option {
-                InstallOptions::Chrome => "Library/Application Support/Chrome/NativeMessagingHosts",
-                InstallOptions::Chromium => "Library/Application Support/Chromium/NativeMessagingHosts",
-                InstallOptions::Vivaldi => "Library/Application Support/Vivaldi/NativeMessagingHosts",
-                InstallOptions::Firefox => "Library/Application Support/Mozilla/NativeMessagingHosts",
+                BrowserKind::Chrome => "Library/Application Support/Chrome/NativeMessagingHosts",
+                BrowserKind::Chromium => "Library/Application Support/Chromium/NativeMessagingHosts",
+                BrowserKind::Vivaldi => "Library/Application Support/Vivaldi/NativeMessagingHosts",
+                BrowserKind::Firefox => "Library/Application Support/Mozilla/NativeMessagingHosts",
             };
         } else {
             let path = match option {
-                InstallOptions::Chrome => ".config/chrome/NativeMessagingHosts",
-                InstallOptions::Chromium => ".config/chromium/NativeMessagingHosts",
-                InstallOptions::Vivaldi => ".config/vivaldi/NativeMessagingHosts",
-                InstallOptions::Firefox => ".mozilla/native-messaging-hosts",
+                BrowserKind::Chrome => ".config/chrome/NativeMessagingHosts",
+                BrowserKind::Chromium => ".config/chromium/NativeMessagingHosts",
+                BrowserKind::Vivaldi => ".config/vivaldi/NativeMessagingHosts",
+                BrowserKind::Firefox => ".mozilla/native-messaging-hosts",
             };
         }
     };
@@ -124,19 +137,19 @@ fn get_link_path(option: &InstallOptions) -> PathBuf {
 
     user_dir
         .join(path)
-        .join(format!("{}.json", EDMAN_UNIQUE_NAME))
+        .join(format!("{}.json", utils::EDMAN_UNIQUE_NAME))
 }
 
 #[cfg(windows)]
-fn get_registry(option: &InstallOptions) -> std::io::Result<winreg::RegKey> {
+fn get_registry(option: &BrowserKind) -> std::io::Result<winreg::RegKey> {
     use winreg::enums::*;
     use winreg::RegKey;
 
     let path = match option {
-        InstallOptions::Chrome => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
-        InstallOptions::Chromium => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
-        InstallOptions::Vivaldi => r"SOFTWARE\Vivaldi\NativeMessagingHosts",
-        InstallOptions::Firefox => r"SOFTWARE\Mozilla\NativeMessagingHosts",
+        BrowserKind::Chrome => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
+        BrowserKind::Chromium => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
+        BrowserKind::Vivaldi => r"SOFTWARE\Vivaldi\NativeMessagingHosts",
+        BrowserKind::Firefox => r"SOFTWARE\Mozilla\NativeMessagingHosts",
     };
 
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);

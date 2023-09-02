@@ -1,0 +1,16 @@
+[package]
+name = "utils"
+edition = "2021"
+
+version.workspace = true
+description.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+directories = "5.0.1"
+cfg-if = "1.0.0"
+

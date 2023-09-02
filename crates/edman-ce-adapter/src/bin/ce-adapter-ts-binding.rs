@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ts = format!(
         "export const EDMAN_UNIQUE_NAME = \"{}\";\n\n{}",
-        edman_ce_adapter::EDMAN_UNIQUE_NAME,
+        utils::EDMAN_UNIQUE_NAME,
         generated_ts
     );
 
