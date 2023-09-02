@@ -102,14 +102,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prisma_client = PrismaClient::_builder().build().await?;
     prisma_client._migrate_deploy().await?;
 
-    let addr = "[::1]:50051".parse().unwrap();
+    let uds_stream = transport::sock_stream()?;
     let greeter = ChromeExtensionInterface { prisma_client };
-
-    println!("Edman Main Server listening on {}", addr);
 
     Server::builder()
         .add_service(DownloadManagerServer::new(greeter))
-        .serve(addr)
+        .serve_with_incoming(uds_stream)
         .await?;
 
     Ok(())

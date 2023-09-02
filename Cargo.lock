@@ -1015,6 +1015,7 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
+ "transport",
  "typeshare",
  "typeshare-core",
  "utils",
@@ -1033,6 +1034,7 @@ dependencies = [
  "tokio-test",
  "tonic",
  "tonic-build",
+ "transport",
 ]
 
 [[package]]
@@ -4944,6 +4946,19 @@ dependencies = [
  "thread_local",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "transport"
+version = "0.1.0"
+dependencies = [
+ "directories 5.0.1",
+ "http",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tower",
+ "utils",
 ]
 
 [[package]]

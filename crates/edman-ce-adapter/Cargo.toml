@@ -15,6 +15,7 @@ rust-version.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true
+transport.workspace = true
 
 utils.workspace = true
 

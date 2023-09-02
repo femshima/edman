@@ -36,7 +36,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return installer::uninstall(options);
     }
 
-    let mut client = DownloadManagerClient::connect("http://[::1]:50051").await?;
+    let channel = transport::connect().await?;
+    let mut client = DownloadManagerClient::new(channel);
     let config_response = client
         .get_config(tonic::Request::new(chrome_extension::ConfigRequest {}))
         .await?;
