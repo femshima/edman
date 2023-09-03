@@ -1015,8 +1015,10 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-build",
+ "transport",
  "typeshare",
  "typeshare-core",
+ "utils",
  "winreg 0.51.0",
 ]
 
@@ -1032,6 +1034,7 @@ dependencies = [
  "tokio-test",
  "tonic",
  "tonic-build",
+ "transport",
 ]
 
 [[package]]
@@ -4946,6 +4949,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "transport"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "directories 5.0.1",
+ "http",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tower",
+ "uds_windows",
+ "utils",
+]
+
+[[package]]
 name = "trust-dns-proto"
 version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5068,6 +5086,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed646292ffc8188ef8ea4d1e0e0150fb15a5c2e12ad9b8fc191ae7a8a7f3c4b9"
 
 [[package]]
+name = "uds_windows"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce65604324d3cce9b966701489fbd0cf318cb1f7bd9dd07ac9a4ee6fb791930d"
+dependencies = [
+ "tempfile",
+ "winapi",
+]
+
+[[package]]
 name = "unicode-bidi"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5162,6 +5190,14 @@ name = "utf8parse"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "711b9620af191e0cdc7468a8d14e709c3dcdb115b36f838e601583af800a370a"
+
+[[package]]
+name = "utils"
+version = "0.1.0"
+dependencies = [
+ "cfg-if",
+ "directories 5.0.1",
+]
 
 [[package]]
 name = "uuid"

@@ -1,5 +1,5 @@
 [package]
-name = "edman-main"
+name = "transport"
 edition = "2021"
 
 version.workspace = true
@@ -13,14 +13,17 @@ rust-version.workspace = true
 [dependencies]
 tokio.workspace = true
 tonic.workspace = true
-prost.workspace = true
-transport.workspace = true
+
+utils.workspace = true
+
+cfg-if = "1.0.0"
 
 directories = "5.0.1"
 
-prisma-codegen = { path = "../prisma-codegen" }
-prisma-client-rust.workspace = true
+tower = "0.4"
+http = "0.2"
 
-[build-dependencies]
-tokio-test = "0.4.3"
-tonic-build = { version = "0.9.2", features = ["prost"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+
+[target.'cfg(windows)'.dependencies]
+uds_windows = "1.0"
