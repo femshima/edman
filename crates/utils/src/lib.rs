@@ -24,7 +24,7 @@ pub fn sock_path() -> PathBuf {
                 .runtime_dir()
                 .expect("Runtime directory not found");
         } else {
-            let runtime_dir = project_dirs.cache_dir()
+            let runtime_dir = project_dirs.cache_dir();
         }
     };
 
