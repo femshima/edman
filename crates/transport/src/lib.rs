@@ -40,7 +40,7 @@ pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
 
 #[cfg(windows)]
 pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
-    let connection = tonic::transport::Endpoint::new(utils::sock_path())?
+    let connection = tonic::transport::Endpoint::new(format!("http://{}", utils::sock_path()))?
         .connect()
         .await?;
     Ok(connection)
