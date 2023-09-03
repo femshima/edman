@@ -1,20 +1,28 @@
 use std::{
     cell::RefCell,
     ffi::OsStr,
-    os::unix::prelude::OsStrExt,
     path::PathBuf,
     rc::Rc,
     task::{Context, Poll},
 };
 
-use tokio::net::{UnixListener, UnixStream};
-use tokio_stream::wrappers::UnixListenerStream;
 use tonic::{
     body::BoxBody,
     transport::{Channel, Endpoint, Uri},
 };
 use tower::{service_fn, Service};
 
+cfg_if::cfg_if! {
+    if #[cfg(windows)] {
+        use uds_windows::{UnixListener, UnixStream};
+    } else if #[cfg(unix)] {
+        use tokio::net::{UnixListener, UnixStream};
+        use tokio_stream::wrappers::UnixListenerStream;
+        use std::os::unix::prelude::OsStrExt;
+    }
+}
+
+#[cfg(unix)]
 pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
     let uri = Uri::builder()
         .authority("localhost")
@@ -32,6 +40,7 @@ pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
     Ok(channel)
 }
 
+#[cfg(unix)]
 pub fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
     let sock_path = utils::sock_path();
     utils::create_parent_dirs(&sock_path)?;
