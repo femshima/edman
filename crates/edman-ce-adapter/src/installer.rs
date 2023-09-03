@@ -82,7 +82,7 @@ pub fn install(
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
             let parent_key = get_registry(&option)?;
-            let (key, _) = parent_key.create_subkey(EDMAN_UNIQUE_NAME)?;
+            let (key, _) = parent_key.create_subkey(utils::EDMAN_UNIQUE_NAME)?;
             key.set_value("", manifest_path.to_str().as_ref().unwrap())?;
         } else if #[cfg(unix)] {
             let link_path = get_link_path(&option);
@@ -99,7 +99,7 @@ pub fn uninstall(option: BrowserKind) -> Result<(), Box<dyn std::error::Error>> 
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
             let parent_key = get_registry(&option)?;
-            parent_key.delete_subkey(EDMAN_UNIQUE_NAME)?;
+            parent_key.delete_subkey(utils::EDMAN_UNIQUE_NAME)?;
         } else if #[cfg(unix)] {
             let link_path = get_link_path(&option);
             std::fs::remove_file(link_path)?;
