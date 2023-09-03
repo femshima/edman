@@ -1,24 +1,22 @@
 use std::{
     cell::RefCell,
-    ffi::OsStr,
-    path::PathBuf,
     rc::Rc,
     task::{Context, Poll},
 };
 
-use tonic::{
-    body::BoxBody,
-    transport::{Channel, Endpoint, Uri},
-};
-use tower::{service_fn, Service};
+use tonic::{body::BoxBody, transport::Channel};
+use tower::Service;
 
 cfg_if::cfg_if! {
     if #[cfg(windows)] {
-        use uds_windows::{UnixListener, UnixStream};
+        use tokio::net::TcpListener;
+        use tokio_stream::wrappers::TcpListenerStream;
     } else if #[cfg(unix)] {
         use tokio::net::{UnixListener, UnixStream};
         use tokio_stream::wrappers::UnixListenerStream;
-        use std::os::unix::prelude::OsStrExt;
+        use std::{ffi::OsStr, os::unix::prelude::OsStrExt, path::PathBuf};
+        use tower::service_fn;
+        use tonic::transport::{Endpoint, Uri};
     }
 }
 
@@ -40,8 +38,16 @@ pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
     Ok(channel)
 }
 
+#[cfg(windows)]
+pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
+    let connection = tonic::transport::Endpoint::new(utils::sock_path())?
+        .connect()
+        .await?;
+    Ok(connection)
+}
+
 #[cfg(unix)]
-pub fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
+pub async fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
     let sock_path = utils::sock_path();
     utils::create_parent_dirs(&sock_path)?;
 
@@ -51,6 +57,18 @@ pub fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
     println!("Listening at {}", sock_path.display());
 
     Ok(uds_stream)
+}
+
+#[cfg(windows)]
+pub async fn sock_stream() -> Result<TcpListenerStream, Box<dyn std::error::Error>> {
+    let addr = utils::sock_path();
+
+    let tcp = TcpListener::bind(addr).await?;
+    let tcp_stream = TcpListenerStream::new(tcp);
+
+    println!("Listening at {}", addr);
+
+    Ok(tcp_stream)
 }
 
 pub struct GrpcChannel {

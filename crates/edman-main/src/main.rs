@@ -102,12 +102,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prisma_client = PrismaClient::_builder().build().await?;
     prisma_client._migrate_deploy().await?;
 
-    let uds_stream = transport::sock_stream()?;
+    let stream = transport::sock_stream().await?;
     let greeter = ChromeExtensionInterface { prisma_client };
 
     Server::builder()
         .add_service(DownloadManagerServer::new(greeter))
-        .serve_with_incoming(uds_stream)
+        .serve_with_incoming(stream)
         .await?;
 
     Ok(())

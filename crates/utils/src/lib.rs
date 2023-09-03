@@ -16,6 +16,7 @@ pub fn create_parent_dirs<P: AsRef<Path>>(path: P) -> Result<(), std::io::Error>
     Ok(())
 }
 
+#[cfg(unix)]
 pub fn sock_path() -> PathBuf {
     let project_dirs = project_dirs();
     cfg_if::cfg_if! {
@@ -29,6 +30,11 @@ pub fn sock_path() -> PathBuf {
     };
 
     runtime_dir.join("edman.sock")
+}
+
+#[cfg(windows)]
+pub fn sock_path() -> &'static str {
+    "[::1]:50044"
 }
 
 pub fn manifest_path_firefox() -> PathBuf {
