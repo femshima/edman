@@ -21,14 +21,15 @@ cfg_if::cfg_if! {
 }
 
 #[cfg(unix)]
-pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
+pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     let uri = Uri::builder()
         .authority("localhost")
         .scheme("file")
         .path_and_query(utils::sock_path().as_os_str().as_bytes())
-        .build()?;
+        .build()
+        .expect("Could not parse uri. This is not supposed to happen");
 
-    let channel = Endpoint::try_from(uri)?
+    let channel = Endpoint::from(uri)
         .connect_with_connector(service_fn(|uri: Uri| {
             let path_str = OsStr::from_bytes(uri.path().as_bytes());
             UnixStream::connect(PathBuf::from(path_str))
@@ -39,7 +40,7 @@ pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
 }
 
 #[cfg(windows)]
-pub async fn connect() -> Result<Channel, Box<dyn std::error::Error>> {
+pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     let connection = tonic::transport::Endpoint::new(format!("http://{}", utils::sock_path()))?
         .connect()
         .await?;

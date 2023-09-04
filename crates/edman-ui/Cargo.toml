@@ -14,8 +14,12 @@ rust-version.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 prost.workspace = true
+transport.workspace = true
 
-iced = { "version" = "0.10", "features" = [ "wgpu", "advanced"] }
+strum = "0.25"
+strum_macros = "0.25"
+
+iced = { "version" = "0.10", "features" = [ "wgpu", "tokio"] }
 
 [build-dependencies]
 tonic-build = { version = "0.9.2", features = ["prost"] }

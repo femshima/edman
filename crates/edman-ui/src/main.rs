@@ -1,92 +1,99 @@
-use std::collections::HashMap;
+use std::fmt::Display;
 
-use files::{FileNode, FileNodeMessage, FileTypeEnum};
-use iced::widget::{button, column, row, scrollable, text};
-use iced::{
-    executor, font, theme, Alignment, Application, Color, Command, Element, Font, Length, Padding,
-    Settings, Theme,
-};
+use iced::widget::{column, scrollable, text};
+use iced::{font, Application, Command, Element, Font, Settings};
+use page::{Page, PageMessage};
+use strum::EnumCount;
+use strum_macros::{EnumCount, IntoStaticStr};
+use tonic::transport::Channel;
 
-mod files;
+mod grpc;
+mod page;
 
 pub fn main() -> iced::Result {
-    Counter::run(Settings {
+    App::run(Settings {
         default_font: Font::with_name("BIZ UDGothic"),
         ..Settings::default()
     })
 }
 
-struct Counter {
-    value: i32,
-    folders: FileNode,
+#[derive(Default)]
+struct App {
+    status: Status,
+    loading_state: Option<LoadingStates>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Default)]
+enum Status {
+    #[default]
+    Loading,
+    Loaded(Page),
+    Error,
+}
+
+#[derive(Debug)]
 enum Message {
-    IncrementPressed,
-    DecrementPressed,
-    FontLoaded(Result<(), font::Error>),
-    FileMessage(FileNodeMessage),
+    Loaded(LoadMessage),
+    PageMessage(PageMessage),
 }
 
-impl Application for Counter {
+#[derive(Debug, EnumCount, IntoStaticStr)]
+enum LoadMessage {
+    Font(Result<(), font::Error>),
+    ApiServer(Result<Channel, tonic::transport::Error>),
+}
+
+impl LoadMessage {
+    pub fn is_ok(&self) -> bool {
+        match self {
+            Self::Font(inner) => inner.is_ok(),
+            Self::ApiServer(inner) => inner.is_ok(),
+        }
+    }
+    pub fn is_err(&self)->bool{
+        !self.is_ok()
+    }
+}
+
+struct LoadingStates{
+    font: Option<Result<(),font::Error>>,
+    api_server: Option<Result<Channel, tonic::transport::Error>>
+}
+
+impl LoadingStates{
+    pub fn is_status_determined(&self)->bool{
+        macro_rules! any_is_err {
+            ($f:item,$($x:expr),*) => (
+                $()
+            );
+        }
+
+        let err=Self::is_err(&self.font)|Self::is_err(&self.api_server);
+        let ok=
+    }
+    fn is_ok<T,E>(opt: &Option<Result<T,E>>)->bool{
+        matches!(opt, Some(Ok(_)))
+    }
+    fn is_err<T,E>(opt: &Option<Result<T,E>>)->bool{
+        matches!(opt, Some(Err(_)))
+    }
+}
+
+impl Application for App {
     type Message = Message;
     type Flags = ();
-    type Executor = executor::Default;
-    type Theme = Theme;
+    type Executor = iced::executor::Default;
+    type Theme = iced::Theme;
 
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
         (
-            Self {
-                value: 0,
-                folders: FileNode {
-                    id: 0,
-                    name: "Root".to_string(),
-                    is_open: true,
-                    file_type: FileTypeEnum::Node {
-                        children: vec![
-                            FileNode {
-                                id: 1,
-                                name: "文学部 hogehoge スパコンプログラミング".to_string(),
-                                is_open: false,
-                                file_type: FileTypeEnum::Node {
-                                    children: vec![FileNode {
-                                        id: 1,
-                                        name: "123456.pdf".to_string(),
-                                        is_open: false,
-                                        file_type: FileTypeEnum::Leaf {
-                                            attributes: HashMap::from_iter(
-                                                [("path".to_string(), "hoge".to_string())]
-                                                    .into_iter(),
-                                            ),
-                                        },
-                                    }],
-                                },
-                            },
-                            FileNode {
-                                id: 2,
-                                name: "文学部 fugafuga うがー".to_string(),
-                                is_open: false,
-                                file_type: FileTypeEnum::Node {
-                                    children: vec![FileNode {
-                                        id: 2,
-                                        name: "555555.pdf".to_string(),
-                                        is_open: false,
-                                        file_type: FileTypeEnum::Leaf {
-                                            attributes: HashMap::from_iter(
-                                                [("path".to_string(), "hoge".to_string())]
-                                                    .into_iter(),
-                                            ),
-                                        },
-                                    }],
-                                },
-                            },
-                        ],
-                    },
-                },
-            },
-            font::load(include_bytes!("../fonts/BIZUDGothic-Regular.ttf").as_slice())
-                .map(Message::FontLoaded),
+            Self::default(),
+            Command::batch(vec![
+                font::load(include_bytes!("../fonts/BIZUDGothic-Regular.ttf").as_slice())
+                    .map(LoadMessage::Font),
+                Command::perform(transport::connect(), LoadMessage::ApiServer),
+            ])
+            .map(Message::Loaded),
         )
     }
 
@@ -96,15 +103,25 @@ impl Application for Counter {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::IncrementPressed => {
-                self.value += 1;
+            Message::Loaded(message) => self.loading_state.get_or_insert(vec![]).push(message),
+            Message::PageMessage(message) => {
+                if let Status::Loaded(ref mut page) = self.status {
+                    return page.update(message).map(Message::PageMessage);
+                }
             }
-            Message::DecrementPressed => {
-                self.value -= 1;
-            }
-            Message::FontLoaded(_) => (),
-            Message::FileMessage(m) => {
-                self.folders.update(m);
+        }
+
+        if matches!(self.status, Status::Loading) && matches!(&self.loading_state,Some(v) if v.len() == LoadMessage::COUNT)
+        {
+            let loading_state = self.loading_state.take().unwrap();
+
+            match loading_state{
+                LoadingStates{
+                    font: Some(Ok(_)),
+                    api_server: Some(Ok(grpc_channel))
+                }=>{
+                    self.status=Status::Loaded(Page::new(grpc_channel))
+                }
             }
         }
 
@@ -112,17 +129,18 @@ impl Application for Counter {
     }
 
     fn view(&self) -> Element<Message> {
-        let files: Element<_> = self.folders.view().map(|m| Message::FileMessage(m));
+        if let Status::Loaded(ref page) = self.status {
+            return page.view().map(Message::PageMessage);
+        }
 
-        scrollable(
-            column![
-                button("Increment").on_press(Message::IncrementPressed),
-                text(self.value).size(50),
-                files,
-            ]
-            .padding(20)
-            .align_items(Alignment::Center),
-        )
-        .into()
+        let title = match self.status {
+            Status::Loading { .. } => text("Loading...").size(40),
+            Status::Error => text("Error!").size(40),
+            _ => unreachable!(),
+        };
+
+        let statuses=
+
+        column![title, scrollable(column(self.))].into()
     }
 }

@@ -5,5 +5,11 @@ package ui;
 import "config.proto";
 
 service EdmanMain {
-  
+  rpc GetConfig (ConfigRequest) returns (ConfigReply) {}
+}
+
+message ConfigRequest {}
+
+message ConfigReply {
+  config.Config config = 1;
 }
