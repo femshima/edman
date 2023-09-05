@@ -1,13 +1,12 @@
-use std::fmt::Display;
+use std::fmt::Debug;
 
 use iced::widget::{column, scrollable, text};
-use iced::{font, Application, Command, Element, Font, Settings};
+use iced::{Application, Command, Element, Font, Settings};
+use loading::{Loading, LoadingMessage};
 use page::{Page, PageMessage};
-use strum::EnumCount;
-use strum_macros::{EnumCount, IntoStaticStr};
-use tonic::transport::Channel;
 
 mod grpc;
+mod loading;
 mod page;
 
 pub fn main() -> iced::Result {
@@ -17,66 +16,16 @@ pub fn main() -> iced::Result {
     })
 }
 
-#[derive(Default)]
-struct App {
-    status: Status,
-    loading_state: Option<LoadingStates>,
-}
-
-#[derive(Default)]
-enum Status {
-    #[default]
-    Loading,
+enum App {
+    Loading(Loading),
+    InitPage,
     Loaded(Page),
-    Error,
 }
 
 #[derive(Debug)]
 enum Message {
-    Loaded(LoadMessage),
+    LoadingMessage(LoadingMessage),
     PageMessage(PageMessage),
-}
-
-#[derive(Debug, EnumCount, IntoStaticStr)]
-enum LoadMessage {
-    Font(Result<(), font::Error>),
-    ApiServer(Result<Channel, tonic::transport::Error>),
-}
-
-impl LoadMessage {
-    pub fn is_ok(&self) -> bool {
-        match self {
-            Self::Font(inner) => inner.is_ok(),
-            Self::ApiServer(inner) => inner.is_ok(),
-        }
-    }
-    pub fn is_err(&self)->bool{
-        !self.is_ok()
-    }
-}
-
-struct LoadingStates{
-    font: Option<Result<(),font::Error>>,
-    api_server: Option<Result<Channel, tonic::transport::Error>>
-}
-
-impl LoadingStates{
-    pub fn is_status_determined(&self)->bool{
-        macro_rules! any_is_err {
-            ($f:item,$($x:expr),*) => (
-                $()
-            );
-        }
-
-        let err=Self::is_err(&self.font)|Self::is_err(&self.api_server);
-        let ok=
-    }
-    fn is_ok<T,E>(opt: &Option<Result<T,E>>)->bool{
-        matches!(opt, Some(Ok(_)))
-    }
-    fn is_err<T,E>(opt: &Option<Result<T,E>>)->bool{
-        matches!(opt, Some(Err(_)))
-    }
 }
 
 impl Application for App {
@@ -86,15 +35,8 @@ impl Application for App {
     type Theme = iced::Theme;
 
     fn new(_flags: Self::Flags) -> (Self, Command<Message>) {
-        (
-            Self::default(),
-            Command::batch(vec![
-                font::load(include_bytes!("../fonts/BIZUDGothic-Regular.ttf").as_slice())
-                    .map(LoadMessage::Font),
-                Command::perform(transport::connect(), LoadMessage::ApiServer),
-            ])
-            .map(Message::Loaded),
-        )
+        let (loading, batch) = Loading::new();
+        (Self::Loading(loading), batch.map(Message::LoadingMessage))
     }
 
     fn title(&self) -> String {
@@ -102,45 +44,45 @@ impl Application for App {
     }
 
     fn update(&mut self, message: Message) -> Command<Message> {
-        match message {
-            Message::Loaded(message) => self.loading_state.get_or_insert(vec![]).push(message),
-            Message::PageMessage(message) => {
-                if let Status::Loaded(ref mut page) = self.status {
+        match self {
+            Self::Loading(loading) => match message {
+                Message::LoadingMessage(message) => loading.update(message),
+                Message::PageMessage(_) => unreachable!(),
+            },
+            Self::InitPage => unreachable!(),
+            Self::Loaded(page) => match message {
+                Message::LoadingMessage(_) => unreachable!(),
+                Message::PageMessage(message) => {
                     return page.update(message).map(Message::PageMessage);
                 }
-            }
+            },
         }
 
-        if matches!(self.status, Status::Loading) && matches!(&self.loading_state,Some(v) if v.len() == LoadMessage::COUNT)
-        {
-            let loading_state = self.loading_state.take().unwrap();
-
-            match loading_state{
-                LoadingStates{
-                    font: Some(Ok(_)),
-                    api_server: Some(Ok(grpc_channel))
-                }=>{
-                    self.status=Status::Loaded(Page::new(grpc_channel))
-                }
-            }
+        if matches!(self,Self::Loading(loading) if loading.states.is_ok()) {
+            let Self::Loading(loading) = std::mem::replace(self, Self::InitPage) else {unreachable!()};
+            let grpc_channel = loading.states.api_server.unwrap().unwrap();
+            *self = Self::Loaded(Page::new(grpc_channel));
         }
 
         Command::none()
     }
 
     fn view(&self) -> Element<Message> {
-        if let Status::Loaded(ref page) = self.status {
-            return page.view().map(Message::PageMessage);
+        match self {
+            Self::Loading(loading) => {
+                let title = if matches!(self,Self::Loading(loading) if loading.states.is_err()) {
+                    text("Error!").size(40)
+                } else {
+                    text("Loading...").size(40)
+                };
+
+                let statuses: Element<Message> =
+                    scrollable(loading.view().map(Message::LoadingMessage)).into();
+
+                column![title, statuses].into()
+            }
+            Self::InitPage => unreachable!(),
+            Self::Loaded(page) => page.view().map(Message::PageMessage),
         }
-
-        let title = match self.status {
-            Status::Loading { .. } => text("Loading...").size(40),
-            Status::Error => text("Error!").size(40),
-            _ => unreachable!(),
-        };
-
-        let statuses=
-
-        column![title, scrollable(column(self.))].into()
     }
 }
