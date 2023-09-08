@@ -1,5 +1,3 @@
-use tonic::transport::Channel;
-
 use self::ui::edman_main_client::EdmanMainClient;
 
 pub mod config {
@@ -12,4 +10,4 @@ pub mod ui {
     tonic::include_proto!("ui");
 }
 
-pub type Client = EdmanMainClient<Channel>;
+pub type Client = EdmanMainClient<transport::GrpcChannel>;

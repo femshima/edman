@@ -1,6 +1,5 @@
 use std::{
-    cell::RefCell,
-    rc::Rc,
+    sync::{Arc, Mutex},
     task::{Context, Poll},
 };
 
@@ -72,13 +71,16 @@ pub async fn sock_stream() -> Result<TcpListenerStream, Box<dyn std::error::Erro
     Ok(tcp_stream)
 }
 
+#[derive(Clone)]
 pub struct GrpcChannel {
-    inner: Rc<RefCell<Channel>>,
+    inner: Arc<Mutex<Channel>>,
 }
 
 impl GrpcChannel {
-    pub fn new(inner: Rc<RefCell<Channel>>) -> Self {
-        Self { inner }
+    pub fn new(channel: Channel) -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(channel)),
+        }
     }
 }
 
@@ -88,7 +90,7 @@ impl Service<http::Request<BoxBody>> for GrpcChannel {
     type Future = tonic::transport::channel::ResponseFuture;
 
     fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        if let Ok(mut channel) = self.inner.try_borrow_mut() {
+        if let Ok(mut channel) = self.inner.try_lock() {
             channel.poll_ready(cx)
         } else {
             Poll::Pending
@@ -96,6 +98,9 @@ impl Service<http::Request<BoxBody>> for GrpcChannel {
     }
 
     fn call(&mut self, request: http::Request<BoxBody>) -> Self::Future {
-        self.inner.borrow_mut().call(request)
+        self.inner
+            .try_lock()
+            .expect("Could not acquire lock")
+            .call(request)
     }
 }
