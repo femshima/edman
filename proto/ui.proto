@@ -6,12 +6,21 @@ import "config.proto";
 
 service EdmanMain {
   rpc GetConfig (ConfigRequest) returns (ConfigReply) {}
+  rpc SetConfig (UpdateConfigRequest) returns (UpdateConfigReply) {}
   rpc GetFiles (FilesRequest) returns  (FilesReply) {}
 }
 
 message ConfigRequest {}
 
 message ConfigReply {
+  config.Config config = 1;
+}
+
+message UpdateConfigRequest {
+  config.Config config = 1;
+}
+
+message UpdateConfigReply {
   config.Config config = 1;
 }
 

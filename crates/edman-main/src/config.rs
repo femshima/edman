@@ -8,6 +8,7 @@ pub use crate::grpc::config::Config;
 #[tonic::async_trait]
 pub trait ConfigurationInterface {
     async fn ensure_db(client: &PrismaClient) -> Result<Box<Self>, QueryError>;
+    async fn write_db(client: &PrismaClient, config: Self) -> Result<(), QueryError>;
 }
 
 // TODO: Rust 1.74
@@ -22,6 +23,10 @@ impl ConfigurationInterface for Config {
         let default_config = default();
         db_write_all(client, default_config.clone()).await?;
         Ok(Box::new(default_config))
+    }
+    async fn write_db(client: &PrismaClient, config: Self) -> Result<(), QueryError> {
+        db_write_all(client, config).await?;
+        Ok(())
     }
 }
 

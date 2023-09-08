@@ -37,7 +37,7 @@ impl Page {
                 self.file_view.update(m);
             }
             PageMessage::ConfigMessage(m) => {
-                self.configs.update(m);
+                return self.configs.update(m).map(PageMessage::ConfigMessage);
             }
         }
 

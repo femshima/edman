@@ -29,6 +29,23 @@ impl EdmanMain for UiInterface {
             config: Some(*config),
         }))
     }
+    async fn set_config(
+        &self,
+        request: Request<ui::UpdateConfigRequest>,
+    ) -> Result<Response<ui::UpdateConfigReply>, Status> {
+        if let Some(ref req_config) = request.get_ref().config {
+            crate::config::Config::write_db(&self.prisma_client, req_config.to_owned())
+                .await
+                .map_err(error_prisma_to_tonic)?;
+        };
+        let config = crate::config::Config::ensure_db(&self.prisma_client)
+            .await
+            .map_err(error_prisma_to_tonic)?;
+
+        Ok(Response::new(ui::UpdateConfigReply {
+            config: Some(*config),
+        }))
+    }
 
     async fn get_files(
         &self,
