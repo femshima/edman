@@ -8,7 +8,7 @@ pub use crate::grpc::config::Config;
 #[tonic::async_trait]
 pub trait ConfigurationInterface {
     async fn ensure_db(client: &PrismaClient) -> Result<Box<Self>, QueryError>;
-    async fn write_db(client: &PrismaClient, config: Self) -> Result<(), QueryError>;
+    async fn update_db(client: &PrismaClient, config: Self) -> Result<(), QueryError>;
 }
 
 // TODO: Rust 1.74
@@ -24,8 +24,8 @@ impl ConfigurationInterface for Config {
         db_write_all(client, default_config.clone()).await?;
         Ok(Box::new(default_config))
     }
-    async fn write_db(client: &PrismaClient, config: Self) -> Result<(), QueryError> {
-        db_write_all(client, config).await?;
+    async fn update_db(client: &PrismaClient, config: Self) -> Result<(), QueryError> {
+        db_update_all(client, config).await?;
         Ok(())
     }
 }
@@ -67,6 +67,30 @@ async fn db_write_all(client: &PrismaClient, config: Config) -> Result<(), Query
             config.allowed_extensions.join("\n"),
             config.allowed_origins.join("\n"),
             vec![],
+        )
+        .exec()
+        .await?;
+    Ok(())
+}
+
+async fn db_update_all(client: &PrismaClient, config: Config) -> Result<(), QueryError> {
+    client
+        .config()
+        .update(
+            prisma_codegen::config::UniqueWhereParam::IdEquals(0),
+            vec![
+                prisma_codegen::config::SetParam::SetDownloadDirectory(config.download_directory),
+                prisma_codegen::config::SetParam::SetDownloadSubdirectory(
+                    config.download_subdirectory,
+                ),
+                prisma_codegen::config::SetParam::SetSaveFileDirectory(config.save_file_directory),
+                prisma_codegen::config::SetParam::SetAllowedExtensions(
+                    config.allowed_extensions.join("\n"),
+                ),
+                prisma_codegen::config::SetParam::SetAllowedOrigins(
+                    config.allowed_origins.join("\n"),
+                ),
+            ],
         )
         .exec()
         .await?;

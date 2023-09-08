@@ -34,7 +34,7 @@ impl EdmanMain for UiInterface {
         request: Request<ui::UpdateConfigRequest>,
     ) -> Result<Response<ui::UpdateConfigReply>, Status> {
         if let Some(ref req_config) = request.get_ref().config {
-            crate::config::Config::write_db(&self.prisma_client, req_config.to_owned())
+            crate::config::Config::update_db(&self.prisma_client, req_config.to_owned())
                 .await
                 .map_err(error_prisma_to_tonic)?;
         };
