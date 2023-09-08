@@ -1,8 +1,8 @@
 mod config;
 mod files;
 
-use iced::widget::{column, container, row, scrollable};
-use iced::{Alignment, Command, Element, Length};
+use iced::widget::{container, row, scrollable};
+use iced::{Command, Element, Length};
 
 use self::config::{ConfigSettings, ConfigSettingsMessage};
 use self::files::{FileView, FileViewMessage};
@@ -52,6 +52,7 @@ impl Page {
             container(self.configs.view().map(PageMessage::ConfigMessage))
                 .width(Length::FillPortion(1))
         ]
+        .spacing(10)
         .into()
     }
 }
