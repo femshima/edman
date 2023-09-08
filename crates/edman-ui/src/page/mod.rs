@@ -1,8 +1,8 @@
 mod config;
 mod files;
 
-use iced::widget::{column, row, scrollable};
-use iced::{Alignment, Command, Element};
+use iced::widget::{column, container, row, scrollable};
+use iced::{Alignment, Command, Element, Length};
 
 use self::config::{ConfigSettings, ConfigSettingsMessage};
 use self::files::{FileView, FileViewMessage};
@@ -48,8 +48,9 @@ impl Page {
         let files: Element<_> = self.file_view.view().map(PageMessage::FileMessage);
 
         row![
-            scrollable(column![files,].padding(20).align_items(Alignment::Center)),
-            self.configs.view().map(PageMessage::ConfigMessage)
+            scrollable(files).width(Length::FillPortion(3)),
+            container(self.configs.view().map(PageMessage::ConfigMessage))
+                .width(Length::FillPortion(1))
         ]
         .into()
     }
