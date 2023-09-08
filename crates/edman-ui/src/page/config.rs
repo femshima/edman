@@ -7,7 +7,7 @@ use tonic::Request;
 use crate::grpc;
 
 pub struct ConfigSettings {
-    channel: transport::GrpcChannel,
+    channel: tonic::transport::Channel,
 
     config: Option<grpc::config::Config>,
     allowed_origin: String,
@@ -39,7 +39,7 @@ pub enum ConfigUpdateMessage {
 }
 
 impl ConfigSettings {
-    pub fn new(channel: transport::GrpcChannel) -> (Self, Command<ConfigSettingsMessage>) {
+    pub fn new(channel: tonic::transport::Channel) -> (Self, Command<ConfigSettingsMessage>) {
         (
             Self {
                 channel: channel.clone(),
@@ -179,7 +179,7 @@ impl ConfigSettings {
     }
 
     async fn fetch_config(
-        channel: transport::GrpcChannel,
+        channel: tonic::transport::Channel,
     ) -> Result<Option<grpc::config::Config>, tonic::Status> {
         let mut client = grpc::Client::new(channel.clone());
         let response = client
@@ -189,7 +189,7 @@ impl ConfigSettings {
     }
 
     async fn update_config(
-        channel: transport::GrpcChannel,
+        channel: tonic::transport::Channel,
         config: Option<grpc::config::Config>,
     ) -> Result<Option<grpc::config::Config>, tonic::Status> {
         let mut client = grpc::Client::new(channel.clone());

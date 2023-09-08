@@ -1,10 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    task::{Context, Poll},
-};
-
-use tonic::{body::BoxBody, transport::Channel};
-use tower::Service;
+use tonic::transport::Channel;
 
 cfg_if::cfg_if! {
     if #[cfg(windows)] {
@@ -69,38 +63,4 @@ pub async fn sock_stream() -> Result<TcpListenerStream, Box<dyn std::error::Erro
     println!("Listening at {}", addr);
 
     Ok(tcp_stream)
-}
-
-#[derive(Clone)]
-pub struct GrpcChannel {
-    inner: Arc<Mutex<Channel>>,
-}
-
-impl GrpcChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(channel)),
-        }
-    }
-}
-
-impl Service<http::Request<BoxBody>> for GrpcChannel {
-    type Response = http::Response<tonic::transport::Body>;
-    type Error = tonic::transport::Error;
-    type Future = tonic::transport::channel::ResponseFuture;
-
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        if let Ok(mut channel) = self.inner.try_lock() {
-            channel.poll_ready(cx)
-        } else {
-            Poll::Pending
-        }
-    }
-
-    fn call(&mut self, request: http::Request<BoxBody>) -> Self::Future {
-        self.inner
-            .try_lock()
-            .expect("Could not acquire lock")
-            .call(request)
-    }
 }

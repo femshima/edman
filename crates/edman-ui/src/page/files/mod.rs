@@ -18,7 +18,7 @@ pub enum FileViewMessage {
 }
 
 impl FileView {
-    pub fn new(channel: transport::GrpcChannel) -> (Self, Command<FileViewMessage>) {
+    pub fn new(channel: tonic::transport::Channel) -> (Self, Command<FileViewMessage>) {
         let client = grpc::Client::new(channel.clone());
 
         (

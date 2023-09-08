@@ -10,4 +10,4 @@ pub mod ui {
     tonic::include_proto!("ui");
 }
 
-pub type Client = EdmanMainClient<transport::GrpcChannel>;
+pub type Client = EdmanMainClient<tonic::transport::Channel>;
