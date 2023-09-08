@@ -2,12 +2,7 @@ use prisma_client_rust::QueryError;
 
 use crate::PrismaClient;
 
-pub mod config {
-    #![allow(non_snake_case)]
-    tonic::include_proto!("config");
-}
-
-pub use config::Config;
+pub use crate::grpc::config::Config;
 
 // TODO: Rust 1.74
 #[tonic::async_trait]

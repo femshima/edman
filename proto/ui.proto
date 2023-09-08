@@ -23,7 +23,7 @@ message FilesReply {
 
 message File {
   int32 id = 1;
-  uint64 createdAt = 2;
+  int64 createdAt = 2;
   string key = 3;
   string path = 4;
 }

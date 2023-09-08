@@ -1,21 +1,16 @@
 use std::collections::{hash_map::RandomState, HashSet};
+use std::sync::Arc;
 
 use prisma_codegen::PrismaClient;
 
 use tonic::{Request, Response, Status};
 
-pub use chrome_extension::download_manager_server::{DownloadManager, DownloadManagerServer};
-
 use crate::config::ConfigurationInterface;
 use crate::error_prisma_to_tonic;
-
-pub mod chrome_extension {
-    #![allow(non_snake_case)]
-    tonic::include_proto!("chrome_extension");
-}
+use crate::grpc::chrome_extension::{self, download_manager_server::DownloadManager};
 
 pub struct ChromeExtensionInterface {
-    prisma_client: PrismaClient,
+    pub prisma_client: Arc<PrismaClient>,
 }
 
 // TODO: Rust 1.74
