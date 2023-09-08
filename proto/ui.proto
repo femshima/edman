@@ -6,10 +6,24 @@ import "config.proto";
 
 service EdmanMain {
   rpc GetConfig (ConfigRequest) returns (ConfigReply) {}
+  rpc GetFiles (FilesRequest) returns  (FilesReply) {}
 }
 
 message ConfigRequest {}
 
 message ConfigReply {
   config.Config config = 1;
+}
+
+message FilesRequest {}
+
+message FilesReply {
+  repeated File files = 1;
+}
+
+message File {
+  int32 id = 1;
+  uint64 createdAt = 2;
+  string key = 3;
+  string path = 4;
 }

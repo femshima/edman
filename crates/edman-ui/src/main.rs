@@ -60,8 +60,10 @@ impl Application for App {
 
         if matches!(self,Self::Loading(loading) if loading.states.is_ok()) {
             let Self::Loading(loading) = std::mem::replace(self, Self::InitPage) else {unreachable!()};
-            let grpc_channel = loading.states.api_server.unwrap().unwrap();
-            *self = Self::Loaded(Page::new(grpc_channel));
+            let channel = loading.states.api_server.unwrap().unwrap();
+            let (page, page_command) = Page::new(transport::GrpcChannel::new(channel));
+            *self = Self::Loaded(page);
+            return page_command.map(Message::PageMessage);
         }
 
         Command::none()
