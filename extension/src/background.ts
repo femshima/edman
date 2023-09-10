@@ -15,7 +15,7 @@ registerOnMessage(async ({ type, data, callback }) => {
 
       const downloadPath = `${
         config.data.downloadSubdirectory
-      }/${Date.now()}-${data.key.replace(/[./\/]/, "")}`;
+      }/${Date.now()}-${data.key.replace(/[./\/]/, "_")}`;
       const id = await chrome.downloads.download({
         url: data.url,
         filename: downloadPath,
