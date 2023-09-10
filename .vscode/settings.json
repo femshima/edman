@@ -1,3 +1,9 @@
 {
-  "rust-analyzer.checkOnSave": true
+  "rust-analyzer.checkOnSave": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+  },
+  "prettier.configPath": "extension/.prettierrc.json",
+  "prettier.ignorePath": "extension/.prettierignore",
 }
