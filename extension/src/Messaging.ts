@@ -1,14 +1,14 @@
 export type FileStatesRequest = {
-  keys: string[],
+  keys: string[];
 };
 export type FileStatesReply = {
-  result: boolean[],
+  result: boolean[];
 };
 
 export type DownloadRequest = {
-  savePath: string[],
-  url: string,
-  key: string,
+  savePath: string[];
+  url: string;
+  key: string;
 };
 export type DownloadReply = undefined;
 
@@ -18,21 +18,25 @@ interface ReqResPair<Q, R> {
 }
 
 interface ReqRes {
-  "file_states": ReqResPair<FileStatesRequest, FileStatesReply>,
-  "download": ReqResPair<DownloadRequest, DownloadReply>
+  file_states: ReqResPair<FileStatesRequest, FileStatesReply>;
+  download: ReqResPair<DownloadRequest, DownloadReply>;
 }
 
-export async function sendMessage<T extends keyof ReqRes>(type: T, data: ReqRes[T]['request']): Promise<ReqRes[T]['response']> {
+export async function sendMessage<T extends keyof ReqRes>(
+  type: T,
+  data: ReqRes[T]["request"],
+): Promise<ReqRes[T]["response"]> {
   return chrome.runtime.sendMessage({
-    type, data
+    type,
+    data,
   });
 }
 
 interface CallbackArgs<T extends keyof ReqRes> {
   type: T;
-  data: ReqRes[T]['request'];
+  data: ReqRes[T]["request"];
   sender: chrome.runtime.MessageSender;
-  callback: (ret: ReqRes[T]['response']) => void
+  callback: (ret: ReqRes[T]["response"]) => void;
 }
 
 type ArgUnion = CallbackArgs<"download"> | CallbackArgs<"file_states">;

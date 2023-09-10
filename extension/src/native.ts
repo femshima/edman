@@ -1,7 +1,11 @@
-import { EDMAN_UNIQUE_NAME, NativeMessageKinds, NativeResultKinds } from "./generated/ce-adapter";
+import {
+  EDMAN_UNIQUE_NAME,
+  NativeMessageKinds,
+  NativeResultKinds,
+} from "./generated/ce-adapter";
 
 interface WithId {
-  id: string
+  id: string;
 }
 
 type NativeMessage = NativeMessageKinds & WithId;
@@ -9,7 +13,7 @@ type NativeResult = NativeResultKinds & WithId;
 
 type With<T, U> = U extends { type: T } ? U : never;
 
-type NativeTypes = NativeMessage['type'];
+type NativeTypes = NativeMessage["type"];
 type INativeMessage<T extends NativeTypes> = With<T, NativeMessageKinds>;
 type INativeResult<T extends NativeTypes> = With<T, NativeResultKinds>;
 
@@ -19,7 +23,8 @@ export class NativeMessaging {
     onDisconnect: this.onDisconnect.bind(this),
     onMessage: this.onMessage.bind(this),
   };
-  private callbacks: Map<string, (result: NativeResultKinds) => void> = new Map();
+  private callbacks: Map<string, (result: NativeResultKinds) => void> =
+    new Map();
   private counter = 0;
 
   public constructor() {
@@ -45,7 +50,7 @@ export class NativeMessaging {
 
     const reply = {
       ...message,
-      id: undefined
+      id: undefined,
     };
     delete reply.id;
     this.callbacks.get(id)?.(reply);
@@ -61,20 +66,25 @@ export class NativeMessaging {
 
       port.postMessage({
         ...message,
-        id
+        id,
       });
     });
   }
 
-  public async sendNativeMessage<T extends NativeTypes>(type: T, data: INativeMessage<T>["data"]): Promise<INativeResult<T>> {
+  public async sendNativeMessage<T extends NativeTypes>(
+    type: T,
+    data: INativeMessage<T>["data"],
+  ): Promise<INativeResult<T>> {
     const result = await this.send({ type, data } as INativeMessage<T>);
 
     if (result.type === type) {
       return result as INativeResult<T>;
-    } else if (result.type === 'err') {
+    } else if (result.type === "err") {
       throw new Error(`Native process returned error: ${result.data}`);
     } else {
-      throw new Error(`Return type mismatch: expected ${type} but got ${result.type}`);
+      throw new Error(
+        `Return type mismatch: expected ${type} but got ${result.type}`,
+      );
     }
   }
 }

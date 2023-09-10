@@ -9,10 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .protoc_arg(proto_dir.to_str().unwrap())
         .protoc_arg("--experimental_allow_proto3_optional")
         .compile(
-            &[
-                proto_dir.join("ui.proto"),
-                proto_dir.join("config.proto"),
-            ],
+            &[proto_dir.join("ui.proto"), proto_dir.join("config.proto")],
             &["proto"],
         )?;
 

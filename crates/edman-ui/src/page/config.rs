@@ -55,8 +55,8 @@ impl ConfigSettings {
     }
 
     pub fn view(&self) -> Element<ConfigSettingsMessage> {
-        let Some(ref config)= self.config else {
-            return text("loading").into()
+        let Some(ref config) = self.config else {
+            return text("loading").into();
         };
 
         let directory_settings: Element<ConfigUpdateMessage> = column![

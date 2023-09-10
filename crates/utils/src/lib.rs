@@ -38,8 +38,12 @@ pub fn sock_path() -> &'static str {
 }
 
 pub fn manifest_path_firefox() -> PathBuf {
-    project_dirs().config_local_dir().join("manifest_firefox.json")
+    project_dirs()
+        .config_local_dir()
+        .join("manifest_firefox.json")
 }
 pub fn manifest_path_chromium() -> PathBuf {
-    project_dirs().config_local_dir().join("manifest_chromium.json")
+    project_dirs()
+        .config_local_dir()
+        .join("manifest_chromium.json")
 }

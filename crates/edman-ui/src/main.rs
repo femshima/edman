@@ -59,7 +59,9 @@ impl Application for App {
         }
 
         if matches!(self,Self::Loading(loading) if loading.states.is_ok()) {
-            let Self::Loading(loading) = std::mem::replace(self, Self::InitPage) else {unreachable!()};
+            let Self::Loading(loading) = std::mem::replace(self, Self::InitPage) else {
+                unreachable!()
+            };
             let channel = loading.states.api_server.unwrap().unwrap();
             let (page, page_command) = Page::new(channel);
             *self = Self::Loaded(page);
