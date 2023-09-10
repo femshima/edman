@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "build": "rollup -c",
-    "types": "cargo run --bin ce-adapter-ts-binding -- ./src/generated/ce-adapter.ts"
+    "types": "cargo run --bin ce-adapter-ts-binding -- ./src/generated/ce-adapter.ts",
+    "format": "prettier . --write"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.2",
     "@types/chrome": "^0.0.243",
+    "prettier": "^3.0.3",
     "rollup": "^3.28.1",
     "tslib": "^2.6.2",
     "typescript": "^5.1.6"
