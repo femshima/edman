@@ -32,6 +32,12 @@ pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     Ok(channel)
 }
 
+#[cfg(unix)]
+pub async fn disconnect() -> Result<(), std::io::Error> {
+    let sock_path = utils::sock_path();
+    tokio::fs::remove_file(sock_path).await
+}
+
 #[cfg(windows)]
 pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     let connection = tonic::transport::Endpoint::new(format!("http://{}", utils::sock_path()))?
@@ -39,6 +45,9 @@ pub async fn connect() -> Result<Channel, tonic::transport::Error> {
         .await?;
     Ok(connection)
 }
+
+#[cfg(windows)]
+pub async fn disconnect() -> Result<(), std::io::Error> {}
 
 #[cfg(unix)]
 pub async fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {

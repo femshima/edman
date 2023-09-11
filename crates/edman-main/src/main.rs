@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         prisma_client: prisma_client.to_owned(),
     };
 
-    Server::builder()
+    let server = Server::builder()
         .add_service(
             grpc::chrome_extension::download_manager_server::DownloadManagerServer::new(
                 ce_adapter_interface,
@@ -45,9 +45,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .add_service(grpc::ui::edman_main_server::EdmanMainServer::new(
             ui_interface,
-        ))
-        .serve_with_incoming(stream)
-        .await?;
+        ));
+
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    let server_thread = tokio::spawn(async move {
+        if let Err(e) = server
+            .serve_with_incoming_shutdown(stream, async {
+                rx.await.ok();
+            })
+            .await
+        {
+            eprintln!("server error: {}", e);
+        }
+    });
+
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => {}
+        Err(err) => {
+            eprintln!("Unable to listen for shutdown signal: {}", err);
+        }
+    }
+
+    let _ = tx.send(());
+    server_thread.await?;
+
+    transport::disconnect().await?;
 
     Ok(())
 }
