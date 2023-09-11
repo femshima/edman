@@ -35,6 +35,6 @@ directories = "5.0.1"
 winreg = "0.51"
 
 [build-dependencies]
-tonic-build = { version = "0.9.2", features = ["prost"] }
+tonic-build = { version = "0.10", features = ["prost"] }
 typeshare-core = { version = "1.7.0" }
 glob = "0.3.1"
