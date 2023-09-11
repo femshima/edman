@@ -79,7 +79,12 @@ impl TreeView {
                 } else {
                     *depth = Some(k.len().min(depth.unwrap_or(usize::MAX)));
                 }
-                Some(depth.map(|_| (k, v)))
+
+                Some(if matches!(depth, Some(l) if *l<k.len()) {
+                    None
+                } else {
+                    Some((k, v))
+                })
             })
             .filter_map(|d| d)
             .map(|(k, v)| {
