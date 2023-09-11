@@ -15,6 +15,7 @@ pub struct Loading {
 #[derive(Debug)]
 pub enum LoadingMessage {
     Font(Result<(), font::Error>),
+    Icon(Result<(), font::Error>),
     ApiServer(Result<Channel, tonic::transport::Error>),
     Ui,
 }
@@ -26,6 +27,8 @@ impl Loading {
             Command::batch(vec![
                 font::load(include_bytes!("../fonts/BIZUDGothic-Regular.ttf").as_slice())
                     .map(LoadingMessage::Font),
+                font::load(include_bytes!("../fonts/Font Awesome 6 Free-Solid-900.otf").as_slice())
+                    .map(LoadingMessage::Icon),
                 Command::perform(transport::connect(), LoadingMessage::ApiServer),
             ]),
         )
@@ -34,6 +37,7 @@ impl Loading {
     pub fn update(&mut self, message: LoadingMessage) {
         match message {
             LoadingMessage::Font(r) => self.states.font = Some(r),
+            LoadingMessage::Icon(r) => self.states.icon = Some(r),
             LoadingMessage::ApiServer(r) => self.states.api_server = Some(r),
             LoadingMessage::Ui => (),
         }
@@ -47,7 +51,7 @@ impl Loading {
 macro_rules! all {
     ($f:expr, $x_f:expr, $($x:expr),*) => {
         {
-            $f($x_f) $( && $f($x)),*
+            $f($x_f) $( && $f($x))*
         }
     };
 }
@@ -55,7 +59,7 @@ macro_rules! all {
 macro_rules! any {
     ($f:expr, $x_f:expr, $($x:expr),*) => {
         {
-            $f($x_f) $( || $f($x)),*
+            $f($x_f) $( || $f($x))*
         }
     };
 }
@@ -71,18 +75,19 @@ macro_rules! map {
 #[derive(Default)]
 pub struct LoadingStates {
     pub font: Option<Result<(), font::Error>>,
+    pub icon: Option<Result<(), font::Error>>,
     pub api_server: Option<Result<Channel, tonic::transport::Error>>,
 }
 
 impl LoadingStates {
     pub fn is_ok(&self) -> bool {
-        all!(Self::s_is_ok, &self.font, &self.api_server)
+        all!(Self::s_is_ok, &self.font, &self.icon, &self.api_server)
     }
     pub fn is_err(&self) -> bool {
-        any!(Self::s_is_err, &self.font, &self.api_server)
+        any!(Self::s_is_err, &self.font, &self.icon, &self.api_server)
     }
     pub fn display(&self) -> Element<()> {
-        column(map!(Self::to_display, self, font, api_server)).into()
+        column(map!(Self::to_display, self, font, icon, api_server)).into()
     }
 
     fn s_is_ok<T, E>(opt: &Option<Result<T, E>>) -> bool {

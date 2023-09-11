@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 
 use iced::{
     theme,
-    widget::{button, column, row},
+    widget::{button, column, horizontal_space, row, text},
     Color, Element, Length, Padding, Theme,
 };
 
-use crate::grpc;
+use crate::{grpc, icon};
 
 #[derive(Debug, Clone)]
 pub struct TreeView {
@@ -89,18 +89,27 @@ impl TreeView {
             .filter_map(|d| d)
             .map(|(k, v)| {
                 let file_name = k.last().map(|s| &s[..]).unwrap_or("");
+                let indicator = if v.is_open {
+                    icon::ANGLE_DOWN
+                } else {
+                    icon::ANGLE_RIGHT
+                };
 
-                button(row!["▼", file_name])
-                    .width(Length::Fill)
-                    .style(theme::Button::Custom(Box::new(CustomButtonStyle)))
-                    .padding(Padding {
-                        top: 0.,
-                        right: 0.,
-                        bottom: 0.,
-                        left: 20. * (v.depth as f32),
-                    })
-                    .on_press(TreeViewMessage { path: k.to_owned() })
-                    .into()
+                button(row![
+                    text(indicator).font(icon::ICON_FONT).width(15),
+                    horizontal_space(5),
+                    file_name
+                ])
+                .width(Length::Fill)
+                .style(theme::Button::Custom(Box::new(CustomButtonStyle)))
+                .padding(Padding {
+                    top: 0.,
+                    right: 0.,
+                    bottom: 0.,
+                    left: 20. * (v.depth as f32),
+                })
+                .on_press(TreeViewMessage { path: k.to_owned() })
+                .into()
             })
             .collect();
 
