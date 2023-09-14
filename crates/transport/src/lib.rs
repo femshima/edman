@@ -47,7 +47,9 @@ pub async fn connect() -> Result<Channel, tonic::transport::Error> {
 }
 
 #[cfg(windows)]
-pub async fn disconnect() -> Result<(), std::io::Error> {}
+pub async fn disconnect() -> Result<(), std::io::Error> {
+    Ok(())
+}
 
 #[cfg(unix)]
 pub async fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
