@@ -37,12 +37,23 @@ pub struct NamedPipeStream {
 
 impl NamedPipeStream {
     pub fn new(options: ServerOptions, addr: String) -> std::io::Result<Self> {
-        let server = options.create(&addr)?;
-        Ok(Self {
+        let mut this = Self {
             options,
             addr,
-            current: Box::pin(Self::connect(server)),
-        })
+            current: Box::pin(std::future::pending()),
+        };
+        this.renew_connection(true)?;
+        Ok(this)
+    }
+    fn renew_connection(&mut self, first: bool) -> std::io::Result<()> {
+        let mut options = self.options.clone();
+        options.first_pipe_instance(first);
+        let next_server = options.create(&self.addr)?;
+
+        let server = Box::pin(Self::connect(next_server));
+        let _ = std::mem::replace(&mut self.current, server);
+
+        Ok(())
     }
     async fn connect(server: NamedPipeServer) -> std::io::Result<NamedPipeServer> {
         server.connect().await?;
@@ -53,23 +64,16 @@ impl NamedPipeStream {
 impl Stream for NamedPipeStream {
     type Item = std::io::Result<Pin<WrappedNamedPipe>>;
 
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
-        let result = match self.current.as_mut().poll(cx) {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match self.current.as_mut().poll(cx) {
             Poll::Ready(Ok(server)) => {
-                let w = WrappedNamedPipe::new(server);
-                Poll::Ready(Some(Ok(Pin::new(w))))
+                self.renew_connection(false).unwrap();
+                let wrapped_server = WrappedNamedPipe::new(server);
+                Poll::Ready(Some(Ok(Pin::new(wrapped_server))))
             }
             Poll::Ready(Err(err)) => Poll::Ready(Some(Err(err))),
             Poll::Pending => Poll::Pending,
-        };
-        if matches!(result, Poll::Ready(Some(Ok(_)))) {
-            let server = self.options.create(&self.addr).unwrap();
-            let _ = std::mem::replace(&mut self.current, Box::pin(Self::connect(server)));
         }
-        result
     }
 }
 
