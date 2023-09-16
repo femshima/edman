@@ -29,10 +29,6 @@ pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     Ok(channel)
 }
 
-pub async fn disconnect() -> Result<(), std::io::Error> {
-    Ok(())
-}
-
 pub struct NamedPipeStream {
     options: ServerOptions,
     addr: String,
@@ -112,4 +108,8 @@ pub async fn sock_stream() -> Result<NamedPipeStream, Box<dyn std::error::Error>
     println!("Listening at {}", addr);
 
     Ok(stream)
+}
+
+pub async fn dispose_socket() -> Result<(), std::io::Error> {
+    Ok(())
 }

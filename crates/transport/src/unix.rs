@@ -24,11 +24,6 @@ pub async fn connect() -> Result<Channel, tonic::transport::Error> {
     Ok(channel)
 }
 
-pub async fn disconnect() -> Result<(), std::io::Error> {
-    let sock_path = utils::sock_path();
-    tokio::fs::remove_file(sock_path).await
-}
-
 pub async fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Error>> {
     let sock_path = utils::sock_path();
     utils::create_parent_dirs(&sock_path)?;
@@ -39,4 +34,9 @@ pub async fn sock_stream() -> Result<UnixListenerStream, Box<dyn std::error::Err
     println!("Listening at {}", sock_path.display());
 
     Ok(uds_stream)
+}
+
+pub async fn dispose_socket() -> Result<(), std::io::Error> {
+    let sock_path = utils::sock_path();
+    tokio::fs::remove_file(sock_path).await
 }

@@ -69,7 +69,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = tx.send(());
     server_thread.await?;
 
-    transport::disconnect().await?;
+    transport::dispose_socket().await?;
 
     Ok(())
 }
