@@ -34,7 +34,7 @@ pub fn sock_path() -> PathBuf {
 
 #[cfg(windows)]
 pub fn sock_path() -> &'static str {
-    "[::1]:50044"
+    r"\\.\pipe\edman"
 }
 
 pub fn manifest_path_firefox() -> PathBuf {
