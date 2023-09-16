@@ -11,7 +11,7 @@ fn main() {
     env::set_var("CARGO_TARGET_DIR", &out_dir);
 
     let mut cargo = Command::new("cargo")
-        .args(&["run", "-p", "prisma-cli", "generate"])
+        .args(["run", "-p", "prisma-cli", "generate"])
         .current_dir("../../")
         .spawn()
         .unwrap();

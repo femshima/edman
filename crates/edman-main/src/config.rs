@@ -43,13 +43,13 @@ async fn db_read(client: &PrismaClient) -> Result<Option<Config>, QueryError> {
         save_file_directory: config.save_file_directory,
         allowed_origins: config
             .allowed_origins
-            .split("\n")
+            .split('\n')
             .filter(|s| !s.is_empty())
             .map(ToOwned::to_owned)
             .collect(),
         allowed_extensions: config
             .allowed_extensions
-            .split("\n")
+            .split('\n')
             .filter(|s| !s.is_empty())
             .map(ToOwned::to_owned)
             .collect(),

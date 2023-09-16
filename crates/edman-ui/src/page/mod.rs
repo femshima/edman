@@ -21,7 +21,7 @@ pub enum PageMessage {
 impl Page {
     pub fn new(grpc_channel: tonic::transport::Channel) -> (Self, Command<PageMessage>) {
         let (file_view, file_view_command) = FileView::new(grpc_channel.clone());
-        let (configs, config_command) = ConfigSettings::new(grpc_channel.clone());
+        let (configs, config_command) = ConfigSettings::new(grpc_channel);
         (
             Self { file_view, configs },
             Command::batch(vec![

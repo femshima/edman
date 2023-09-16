@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         generated_ts
     );
 
-    let file = std::env::args().skip(1).next().unwrap();
+    let file = std::env::args().nth(1).unwrap();
     std::fs::File::create(file)?.write_all(ts.as_bytes())?;
 
     Ok(())

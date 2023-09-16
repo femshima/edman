@@ -30,7 +30,7 @@ impl From<grpc::ui::File> for Leaf {
     fn from(value: grpc::ui::File) -> Self {
         Leaf {
             id: value.id,
-            path: value.path.split("/").map(str::to_string).collect(),
+            path: value.path.split('/').map(str::to_string).collect(),
         }
     }
 }
@@ -86,7 +86,7 @@ impl TreeView {
                     Some((k, v))
                 })
             })
-            .filter_map(|d| d)
+            .flatten()
             .map(|(k, v)| {
                 let file_name = k.last().map(|s| &s[..]).unwrap_or("");
                 let indicator = if v.is_open {

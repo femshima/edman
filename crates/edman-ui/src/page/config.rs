@@ -48,7 +48,7 @@ impl ConfigSettings {
                 allowed_extension: String::new(),
             },
             Command::perform(
-                Self::fetch_config(channel.clone()),
+                Self::fetch_config(channel),
                 ConfigSettingsMessage::Loaded,
             ),
         )

@@ -5,8 +5,8 @@ use iced::{Application, Command, Element, Font, Settings};
 use loading::{Loading, LoadingMessage};
 use page::{Page, PageMessage};
 
-mod icon;
 mod grpc;
+mod icon;
 mod loading;
 mod page;
 

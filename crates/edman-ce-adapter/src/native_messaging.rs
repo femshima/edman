@@ -113,7 +113,7 @@ async fn get_reply(
 
             if save_path
                 .iter()
-                .any(|p| p.contains(&['/', '\\']) || p.contains(".."))
+                .any(|p| p.contains(['/', '\\']) || p.contains(".."))
             {
                 let err = anyhow::anyhow!("savePath must not contain slashes or dots.");
                 Err(err)?;
@@ -156,7 +156,7 @@ mod tests {
             .get_config(tonic::Request::new(chrome_extension::ConfigRequest {}))
             .await?;
         let config = config_response.get_ref();
-        let native_message: NativeMessageKinds = serde_json::from_str(&input_str)?;
+        let native_message: NativeMessageKinds = serde_json::from_str(input_str)?;
 
         let reply = get_reply(&mut client, config.config.as_ref().unwrap(), native_message).await?;
 
