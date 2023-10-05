@@ -19,8 +19,8 @@ enum BrowserStrain {
     Firefox,
 }
 
-impl From<BrowserKind> for BrowserStrain {
-    fn from(value: BrowserKind) -> Self {
+impl From<&BrowserKind> for BrowserStrain {
+    fn from(value: &BrowserKind) -> Self {
         match value {
             BrowserKind::Firefox => Self::Firefox,
             _ => Self::Chromium,
@@ -55,7 +55,7 @@ impl Default for AppManifest {
 }
 
 pub fn install(
-    option: BrowserKind,
+    option: &BrowserKind,
     config: &config::Config,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let manifest = match option.into() {

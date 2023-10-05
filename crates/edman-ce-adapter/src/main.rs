@@ -51,7 +51,7 @@ async fn main_procedure() -> Result<(), Box<dyn std::error::Error>> {
     let config = config_response.get_ref().config.as_ref().unwrap();
 
     if let Some(options) = cli.install {
-        installer::install(options, config)?;
+        installer::install(&options, config)?;
     } else {
         if !cli.browser_arguments.is_empty()
             || !config.allowed_origins.contains(&cli.browser_arguments[0])
