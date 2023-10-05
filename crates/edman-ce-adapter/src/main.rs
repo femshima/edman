@@ -29,7 +29,14 @@ pub mod config {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() {
+    if let Err(err) = main_procedure().await {
+        let exit_code = write_error_log(err);
+        std::process::exit(exit_code);
+    }
+}
+
+async fn main_procedure() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     if let Some(options) = cli.uninstall {
@@ -46,12 +53,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(options) = cli.install {
         installer::install(options, config)?;
     } else {
-        if !cli.browser_arguments.is_empty() {
-            assert!(
-                config.allowed_origins.contains(&cli.browser_arguments[0]),
+        if !cli.browser_arguments.is_empty()
+            || !config.allowed_origins.contains(&cli.browser_arguments[0])
+        {
+            Err(anyhow::anyhow!(
                 "Origin \"{}\" is not allowed!",
                 &cli.browser_arguments[0]
-            );
+            ))?;
         }
 
         let stdin = std::io::stdin().lock();
@@ -61,4 +69,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn write_error_log(err: Box<dyn std::error::Error>) -> i32 {
+    use std::{
+        fs::OpenOptions,
+        io::Write,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards!");
+    let log_text = format!("{}: Error {:?}\n", now.as_millis(), err);
+
+    let file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .append(true)
+        .open(utils::ce_adapter_error_log_path());
+    let write_result = file.and_then(|mut error_log| error_log.write_all(log_text.as_bytes()));
+
+    match write_result {
+        Ok(()) => {
+            eprintln!("{}", log_text);
+            -1
+        }
+        Err(err) => {
+            eprintln!(
+                "Cannot open error log!\nError:\n{}\n\nThe original error:\n{}",
+                err, log_text
+            );
+            -2
+        }
+    }
 }

@@ -47,3 +47,11 @@ pub fn manifest_path_chromium() -> PathBuf {
         .config_local_dir()
         .join("manifest_chromium.json")
 }
+
+pub fn ce_adapter_error_log_path() -> PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|path| path.parent().map(|p| p.to_owned()))
+        .unwrap_or_else(|| project_dirs().config_local_dir().to_owned())
+        .join("error_ce_adapter.log")
+}
