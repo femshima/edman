@@ -144,12 +144,9 @@ fn get_link_path(option: &BrowserKind) -> PathBuf {
 fn get_registry(option: &BrowserKind) -> std::io::Result<winreg::RegKey> {
     use winreg::enums::*;
     use winreg::RegKey;
-
-    let path = match option {
-        BrowserKind::Chrome => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
-        BrowserKind::Chromium => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
-        BrowserKind::Vivaldi => r"SOFTWARE\Vivaldi\NativeMessagingHosts",
-        BrowserKind::Firefox => r"SOFTWARE\Mozilla\NativeMessagingHosts",
+    let path = match option.into() {
+        BrowserStrain::Chromium => r"SOFTWARE\Google\Chrome\NativeMessagingHosts",
+        BrowserStrain::Firefox => r"SOFTWARE\Mozilla\NativeMessagingHosts",
     };
 
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
