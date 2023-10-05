@@ -1,5 +1,5 @@
 use chrome_extension::download_manager_client::DownloadManagerClient;
-use clap::Parser;
+use clap::{Args, Parser};
 use installer::BrowserKind;
 use native_messaging::main_loop;
 
@@ -15,8 +15,17 @@ struct Cli {
     #[arg(group = "input", long)]
     uninstall: Option<BrowserKind>,
 
-    #[arg(group = "input")]
-    browser_arguments: Vec<String>,
+    #[clap(flatten)]
+    browser_arguments: BrowserArguments,
+}
+
+#[derive(Args)]
+#[group(id = "input")]
+struct BrowserArguments {
+    origin: Option<String>,
+
+    #[arg(long)]
+    parent_window: Option<i32>,
 }
 
 pub mod chrome_extension {
@@ -53,12 +62,10 @@ async fn main_procedure() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(options) = cli.install {
         installer::install(&options, config)?;
     } else {
-        if !matches!(cli.browser_arguments.get(0), Some(origin) if config.allowed_origins.contains(origin))
-        {
-            Err(anyhow::anyhow!(
-                "Origin \"{}\" is not allowed!",
-                &cli.browser_arguments[0]
-            ))?;
+        if let Some(ref origin) = cli.browser_arguments.origin {
+            if !config.allowed_origins.contains(origin) {
+                Err(anyhow::anyhow!("Origin \"{}\" is not allowed!", origin))?;
+            }
         }
 
         let stdin = std::io::stdin().lock();
