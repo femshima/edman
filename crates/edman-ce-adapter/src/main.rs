@@ -53,8 +53,7 @@ async fn main_procedure() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(options) = cli.install {
         installer::install(&options, config)?;
     } else {
-        if !cli.browser_arguments.is_empty()
-            || !config.allowed_origins.contains(&cli.browser_arguments[0])
+        if !matches!(cli.browser_arguments.get(0), Some(origin) if config.allowed_origins.contains(origin))
         {
             Err(anyhow::anyhow!(
                 "Origin \"{}\" is not allowed!",
