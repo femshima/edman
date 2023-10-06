@@ -24,29 +24,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.target }}
+      - name: Install Windows Cross Compiler
+        if: ${{ contains(matrix.target, 'windows') }}
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
 
-      - uses: actions-rs/cargo@v1
-        id: metadata
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
         with:
-          command: metadata
-          args: --no-deps --format-version 1
+            toolchain: stable
+            targets: ${{ matrix.target }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: |
+      - name: Build
+        run:
+          cargo build --release --target=${{ matrix.target }}
+
+      - name: Create Zip File
+        run: |
           zip ${{ matrix.target }} README.md LICENSE
-          LIST = $("${{ steps.metadata.outputs }}" | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name')
-          for s in $LIST
-          do
-            zip -u --junk-paths ${{ matrix.target }} target/${{ matrix.target }}/release/$s{,.exe}
-          done
+
+          cargo metadata --no-deps --format-version 1 \
+          | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name' \
+          | while read s; do echo "target/${{ matrix.target }}/release/$s"{,.exe}; done \
+          | xargs zip --verbose --update --junk-paths ${{ matrix.target }}
 
       - uses: actions/upload-artifact@v3
         with:
@@ -60,7 +63,7 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v3
-        
+
       - name: Upload prebuild asset
         uses: icrawl/action-artifact@v2
         env:
