@@ -8,10 +8,13 @@ mod native_messaging;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
+#[group(id = "input", multiple = false, conflicts_with = "browser")]
 struct Cli {
+    /// Install native messaging manifest for the extension registered to edman to the specified browser
     #[arg(group = "input", long)]
     install: Option<BrowserKind>,
 
+    /// Uninstall native messaging manifest installed for edman in the specified browser
     #[arg(group = "input", long)]
     uninstall: Option<BrowserKind>,
 
@@ -20,11 +23,11 @@ struct Cli {
 }
 
 #[derive(Args)]
-#[group(id = "input")]
+#[group(id = "browser")]
 struct BrowserArguments {
     origin: Option<String>,
 
-    #[arg(long)]
+    #[arg(hide = true, long)]
     parent_window: Option<i32>,
 }
 
