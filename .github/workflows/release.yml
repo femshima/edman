@@ -58,6 +58,8 @@ jobs:
 
   upload-assets:
     name: Upload Assets
+    permissions:
+      contents: write
     runs-on: ubuntu-22.04
     needs: build
     steps:
