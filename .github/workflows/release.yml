@@ -33,7 +33,6 @@ jobs:
         with:
           command: build
           args: --release --target=${{ matrix.target }}
-          use-cross: true
 
       - uses: actions-rs/cargo@v1
         id: metadata
