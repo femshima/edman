@@ -48,10 +48,12 @@ jobs:
       - name: Create Zip File
         run: |
           zip ${{ matrix.target }} README.md LICENSE
-          BINARIES=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name')
-          for s in "$BINARIES"
-          do
-            zip -u --junk-paths ${{ matrix.target }} target/${{ matrix.target }}/release/$s{,.exe}
+
+          cargo metadata --no-deps --format-version 1 \
+          | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name' \
+          | while read package; do
+            echo "$package"
+            zip -u --junk-paths ${{ matrix.target }} "target/${{ matrix.target }}/release/$package"{,.exe}
           done
 
       - uses: actions/upload-artifact@v3
@@ -66,7 +68,7 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v3
-        
+
       - name: Upload prebuild asset
         uses: icrawl/action-artifact@v2
         env:
