@@ -29,7 +29,7 @@ jobs:
 
       - name: Install Windows Cross Compiler
         if: ${{ contains(matrix.target, 'windows') }}
-        run: apt-get update && apt-get install -y mingw-w64
+        run: sudo apt-get update && sudo apt-get install -y mingw-w64
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@v1
