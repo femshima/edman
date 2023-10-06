@@ -19,8 +19,17 @@ tonic = "0.10"
 tokio = { version = "1.0", features = ["rt-multi-thread", "macros", "signal"] }
 prost = "0.12"
 
-prisma-client-rust = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.9", features = ["sqlite", "migrations"] }
-prisma-client-rust-cli = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.9", features = ["sqlite", "migrations"] }
-
 utils = { path = "crates/utils" }
 transport = { path = "crates/transport" }
+
+[workspace.dependencies.prisma-client-rust]
+git = "https://github.com/Brendonovich/prisma-client-rust"
+tag = "0.6.9"
+features = ["sqlite", "migrations"]
+default-features = false
+
+[workspace.dependencies.prisma-client-rust-cli]
+git = "https://github.com/Brendonovich/prisma-client-rust"
+tag = "0.6.9"
+features = ["sqlite", "migrations"]
+default-features = false

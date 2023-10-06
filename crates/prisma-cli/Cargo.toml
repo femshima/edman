@@ -10,6 +10,13 @@ keywords.workspace = true
 categories.workspace = true
 rust-version.workspace = true
 
+[features]
+prisma-cli = ["prisma-client-rust-cli"]
+
+[[bin]]
+name = "prisma-cli"
+required-features = ["prisma-cli"]
+
 [dependencies]
 prisma-client-rust.workspace = true
-prisma-client-rust-cli.workspace = true
+prisma-client-rust-cli = { workspace = true, optional = true }
