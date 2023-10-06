@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target=${{ matrix.target }}
+          use-cross: true
+     
+      - uses: actions-rs/cargo@v1
+        id: metadata
+        with:
+          command: metadata
+          args: --no-deps --format-version 1
+
+      - run: |
+          zip ${{ matrix.target }} README.md LICENSE
+          LIST = $("${{ steps.metadata.outputs }}" | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name')
+          for s in $LIST
+          do
+            zip -u --junk-paths ${{ matrix.target }} target/${{ matrix.target }}/release/$s{,.exe}
+          done
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.target }}
+          path: ${{ matrix.target }}.zip
+
+  upload-assets:
+    name: Upload Assets
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        
+      - name: Upload prebuild asset
+        uses: icrawl/action-artifact@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path: '*/*.zip'
