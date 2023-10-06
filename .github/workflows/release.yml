@@ -51,8 +51,8 @@ jobs:
 
           cargo metadata --no-deps --format-version 1 \
           | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name' \
-          | while read s; do echo "target/$TARGET/release/$s"{,.exe}; done \
-          | xargs zip --verbose --update --junk-paths $TARGET
+          | while read s; do echo "target/${{ matrix.target }}/release/$s"{,.exe}; done \
+          | xargs zip --verbose --update --junk-paths ${{ matrix.target }}
 
       - uses: actions/upload-artifact@v3
         with:
