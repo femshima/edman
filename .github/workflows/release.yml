@@ -48,7 +48,7 @@ jobs:
       - name: Create Zip File
         run: |
           zip ${{ matrix.target }} README.md LICENSE
-          BINARIES = $(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name')
+          BINARIES=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | .targets[] | select(.kind[0] == "bin") | .name')
           for s in "$BINARIES"
           do
             zip -u --junk-paths ${{ matrix.target }} target/${{ matrix.target }}/release/$s{,.exe}
