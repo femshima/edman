@@ -116,7 +116,7 @@ fn get_link_path(option: &BrowserKind) -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(target="macos")] {
             let path = match option {
-                BrowserKind::Chrome => "Library/Application Support/Chrome/NativeMessagingHosts",
+                BrowserKind::Chrome => "Library/Application Support/Google/Chrome/NativeMessagingHosts",
                 BrowserKind::Chromium => "Library/Application Support/Chromium/NativeMessagingHosts",
                 BrowserKind::Vivaldi => "Library/Application Support/Vivaldi/NativeMessagingHosts",
                 BrowserKind::Firefox => "Library/Application Support/Mozilla/NativeMessagingHosts",
