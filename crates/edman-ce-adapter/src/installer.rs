@@ -11,6 +11,9 @@ pub enum BrowserKind {
     Chromium,
     Vivaldi,
     Firefox,
+
+    ChromiumManifest,
+    FirefoxManifest,
 }
 
 #[derive(Clone, Copy)]
@@ -22,7 +25,7 @@ enum BrowserStrain {
 impl From<&BrowserKind> for BrowserStrain {
     fn from(value: &BrowserKind) -> Self {
         match value {
-            BrowserKind::Firefox => Self::Firefox,
+            BrowserKind::Firefox | BrowserKind::FirefoxManifest => Self::Firefox,
             _ => Self::Chromium,
         }
     }
@@ -72,6 +75,15 @@ pub fn install(
     };
 
     let manifest_str = serde_json::to_string_pretty(&manifest)?;
+
+    match option {
+        BrowserKind::ChromiumManifest | BrowserKind::FirefoxManifest => {
+            println!("{}", manifest_str);
+            return Ok(());
+        }
+        _ => (),
+    }
+
     let manifest_path = match option.into() {
         BrowserStrain::Chromium => utils::manifest_path_chromium(),
         BrowserStrain::Firefox => utils::manifest_path_firefox(),
@@ -116,7 +128,7 @@ fn get_link_path(option: &BrowserKind) -> PathBuf {
     cfg_if::cfg_if! {
         if #[cfg(target="macos")] {
             let path = match option {
-                BrowserKind::Chrome => "Library/Application Support/Chrome/NativeMessagingHosts",
+                BrowserKind::Chrome => "Library/Application Support/Google/Chrome/NativeMessagingHosts",
                 BrowserKind::Chromium => "Library/Application Support/Chromium/NativeMessagingHosts",
                 BrowserKind::Vivaldi => "Library/Application Support/Vivaldi/NativeMessagingHosts",
                 BrowserKind::Firefox => "Library/Application Support/Mozilla/NativeMessagingHosts",
