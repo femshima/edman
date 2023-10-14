@@ -1,95 +1,14 @@
 use std::{io::Write, path::PathBuf};
 
-use clap::ValueEnum;
-use serde::{Deserialize, Serialize};
+use crate::manifest::{BrowserKind, BrowserStrain};
 
-use crate::config;
-
-#[derive(Clone, Copy, ValueEnum)]
-pub enum BrowserKind {
-    Chrome,
-    Chromium,
-    Vivaldi,
-    Firefox,
-
-    ChromiumManifest,
-    FirefoxManifest,
-}
-
-#[derive(Clone, Copy)]
-enum BrowserStrain {
-    Chromium,
-    Firefox,
-}
-
-impl From<&BrowserKind> for BrowserStrain {
-    fn from(value: &BrowserKind) -> Self {
-        match value {
-            BrowserKind::Firefox | BrowserKind::FirefoxManifest => Self::Firefox,
-            _ => Self::Chromium,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
-struct AppManifest {
-    name: &'static str,
-    description: &'static str,
-    path: PathBuf,
-    #[serde(rename = "type")]
-    messaging_type: &'static str,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    allowed_origins: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    allowed_extensions: Option<Vec<String>>,
-}
-
-impl Default for AppManifest {
-    fn default() -> Self {
-        Self {
-            name: utils::EDMAN_UNIQUE_NAME,
-            description: "Manages files",
-            messaging_type: "stdio",
-            path: PathBuf::new(),
-            allowed_origins: None,
-            allowed_extensions: None,
-        }
-    }
-}
-
-pub fn install(
-    option: &BrowserKind,
-    config: &config::Config,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let manifest = match option.into() {
-        BrowserStrain::Chromium => AppManifest {
-            path: std::env::current_exe()?,
-            allowed_origins: Some(config.allowed_origins.to_owned()),
-            ..Default::default()
-        },
-        BrowserStrain::Firefox => AppManifest {
-            path: std::env::current_exe()?,
-            allowed_extensions: Some(config.allowed_extensions.to_owned()),
-            ..Default::default()
-        },
-    };
-
-    let manifest_str = serde_json::to_string_pretty(&manifest)?;
-
-    match option {
-        BrowserKind::ChromiumManifest | BrowserKind::FirefoxManifest => {
-            println!("{}", manifest_str);
-            return Ok(());
-        }
-        _ => (),
-    }
-
+pub fn install(option: &BrowserKind, manifest: String) -> Result<(), Box<dyn std::error::Error>> {
     let manifest_path = match option.into() {
         BrowserStrain::Chromium => utils::manifest_path_chromium(),
         BrowserStrain::Firefox => utils::manifest_path_firefox(),
     };
     utils::create_parent_dirs(&manifest_path)?;
-    std::fs::File::create(&manifest_path)?.write_all(manifest_str.as_bytes())?;
+    std::fs::File::create(&manifest_path)?.write_all(manifest.as_bytes())?;
 
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
