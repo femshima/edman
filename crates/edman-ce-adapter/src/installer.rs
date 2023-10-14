@@ -11,9 +11,6 @@ pub enum BrowserKind {
     Chromium,
     Vivaldi,
     Firefox,
-
-    ChromiumManifest,
-    FirefoxManifest,
 }
 
 #[derive(Clone, Copy)]
@@ -25,7 +22,7 @@ enum BrowserStrain {
 impl From<&BrowserKind> for BrowserStrain {
     fn from(value: &BrowserKind) -> Self {
         match value {
-            BrowserKind::Firefox | BrowserKind::FirefoxManifest => Self::Firefox,
+            BrowserKind::Firefox => Self::Firefox,
             _ => Self::Chromium,
         }
     }
@@ -75,15 +72,6 @@ pub fn install(
     };
 
     let manifest_str = serde_json::to_string_pretty(&manifest)?;
-
-    match option {
-        BrowserKind::ChromiumManifest | BrowserKind::FirefoxManifest => {
-            println!("{}", manifest_str);
-            return Ok(());
-        }
-        _ => (),
-    }
-
     let manifest_path = match option.into() {
         BrowserStrain::Chromium => utils::manifest_path_chromium(),
         BrowserStrain::Firefox => utils::manifest_path_firefox(),
