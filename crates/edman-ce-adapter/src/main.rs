@@ -19,6 +19,7 @@ struct Cli {
     #[arg(group = "input", long)]
     uninstall: Option<BrowserKind>,
 
+    /// Show native messaging manifest generated from current configuration
     #[arg(group = "input", long)]
     manifest: Option<BrowserKind>,
 
