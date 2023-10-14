@@ -1,9 +1,10 @@
 use chrome_extension::download_manager_client::DownloadManagerClient;
 use clap::{Args, Parser};
-use installer::BrowserKind;
+use manifest::{AppManifest, BrowserKind};
 use native_messaging::main_loop;
 
 mod installer;
+mod manifest;
 mod native_messaging;
 
 #[derive(Parser)]
@@ -18,6 +19,9 @@ struct Cli {
     #[arg(group = "input", long)]
     uninstall: Option<BrowserKind>,
 
+    #[arg(group = "input", long)]
+    manifest: Option<BrowserKind>,
+
     #[clap(flatten)]
     browser_arguments: BrowserArguments,
 }
@@ -25,6 +29,7 @@ struct Cli {
 #[derive(Args)]
 #[group(id = "browser")]
 struct BrowserArguments {
+    #[arg(hide = true)]
     origin: Option<String>,
 
     #[arg(hide = true, long)]
@@ -63,7 +68,13 @@ async fn main_procedure() -> Result<(), Box<dyn std::error::Error>> {
     let config = config_response.get_ref().config.as_ref().unwrap();
 
     if let Some(options) = cli.install {
-        installer::install(&options, config)?;
+        let manifest = AppManifest::new(&options, config)?;
+        let manifest_str = serde_json::to_string_pretty(&manifest)?;
+        installer::install(&options, manifest_str)?;
+    } else if let Some(options) = cli.manifest {
+        let manifest = AppManifest::new(&options, config)?;
+        let manifest_str = serde_json::to_string_pretty(&manifest)?;
+        println!("{}", manifest_str);
     } else {
         if let Some(ref origin) = cli.browser_arguments.origin {
             if !config.allowed_origins.contains(origin) {
